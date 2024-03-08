@@ -79,13 +79,13 @@ substance_translation = {
 }
 
 
-class Unold_Lab_Category(EntryDataCategory):
+class UnoldLabCategory(EntryDataCategory):
     m_def = Category(label='HZB Unold Lab', categories=[EntryDataCategory])
 
 
-class Unold_Library(LibrarySample, EntryData):
+class UnoldLibrary(LibrarySample, EntryData):
     m_def = Section(
-        categories=[Unold_Lab_Category],
+        categories=[UnoldLabCategory],
         a_eln=dict(
             hide=["users", "elemental_composition", "components"]))
 
@@ -95,7 +95,7 @@ class Unold_Library(LibrarySample, EntryData):
         a_browser=dict(adaptor='RawFileAdaptor'))
 
     def normalize(self, archive, logger):
-        super(Unold_Library,
+        super(UnoldLibrary,
               self).normalize(archive, logger)
 
         with archive.m_context.raw_file(archive.metadata.mainfile) as f:
@@ -116,9 +116,10 @@ class Unold_Library(LibrarySample, EntryData):
             self.qr_code = qr_file_name
 
 
-class Unold_XRF_Measurement_Library(XRFLibrary, EntryData):
+class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
     m_def = Section(
-        categories=[Unold_Lab_Category],
+        label='Unold lab XRF Measurement Library',
+        categories=[UnoldLabCategory],
         a_eln=dict(hide=['instruments', 'steps', 'results', 'lab_id'],
                    properties=dict(
             order=[
@@ -184,13 +185,14 @@ class Unold_XRF_Measurement_Library(XRFLibrary, EntryData):
                     name=f"{position_axes[0][i % len_x]},{position_axes[1][i // len_x]}"),
                 )
             self.measurements = measurements
-        super(Unold_XRF_Measurement_Library,
+        super(UnoldXRFMeasurementLibrary,
               self).normalize(archive, logger)
 
 
-class Unold_UVvis_Reflection_Measurement_Library(UVvisMeasurementLibrary, EntryData):
+class UnoldUVvisReflectionMeasurementLibrary(UVvisMeasurementLibrary, EntryData):
     m_def = Section(
-        categories=[Unold_Lab_Category],
+        labels='Unold lab UVvis Reflection Measurement Library',
+        categories=[UnoldLabCategory],
         a_eln=dict(hide=['instruments', 'steps', 'results', 'lab_id'],
                    properties=dict(
             order=[
@@ -244,13 +246,14 @@ class Unold_UVvis_Reflection_Measurement_Library(UVvisMeasurementLibrary, EntryD
                         name=f"{x_pos[ix]},{y_pos[iy]}"),
                     )
             self.measurements = measurements
-        super(Unold_UVvis_Reflection_Measurement_Library,
+        super(UnoldUVvisReflectionMeasurementLibrary,
               self).normalize(archive, logger)
 
 
-class Unold_UVvis_Transmission_Measurement_Library(UVvisMeasurementLibrary, EntryData):
+class UnoldUVvisTransmissionMeasurementLibrary(UVvisMeasurementLibrary, EntryData):
     m_def = Section(
-        categories=[Unold_Lab_Category],
+        labels='Unold lab UVvis Transmission Measurement Library',
+        categories=[UnoldLabCategory],
         a_eln=dict(hide=['instruments', 'steps', 'results', 'lab_id'],
                    properties=dict(
             order=[
@@ -308,13 +311,14 @@ class Unold_UVvis_Transmission_Measurement_Library(UVvisMeasurementLibrary, Entr
                         name=f"{x_pos[ix]},{y_pos[iy]}"),
                     )
             self.measurements = measurements
-        super(Unold_UVvis_Transmission_Measurement_Library,
+        super(UnoldUVvisTransmissionMeasurementLibrary,
               self).normalize(archive, logger)
 
 
-class Unold_PL_Measurement_Library(UVvisMeasurementLibrary, EntryData):
+class UnoldPLMeasurementLibrary(UVvisMeasurementLibrary, EntryData):
     m_def = Section(
-        categories=[Unold_Lab_Category],
+        label='Unold lab PL Measurement Library',
+        categories=[UnoldLabCategory],
         a_eln=dict(hide=['instruments', 'steps', 'results', 'lab_id'],
                    properties=dict(
             order=[
@@ -369,13 +373,14 @@ class Unold_PL_Measurement_Library(UVvisMeasurementLibrary, EntryData):
         #                 name=f"{x_pos[ix]},{y_pos[iy]}"),
         #             )
         #     self.measurements = measurements
-        super(Unold_PL_Measurement_Library,
+        super(UnoldPLMeasurementLibrary,
               self).normalize(archive, logger)
 
 
-class Unold_Conductivity_Measurement_Library(ConductivityMeasurementLibrary, EntryData):
+class UnoldConductivityMeasurementLibrary(ConductivityMeasurementLibrary, EntryData):
     m_def = Section(
-        categories=[Unold_Lab_Category],
+        label='Unold lab Conductivity Measurement Library',
+        categories=[UnoldLabCategory],
         a_eln=dict(hide=['instruments', 'steps', 'results', 'lab_id'],
                    properties=dict(
             order=[
@@ -404,7 +409,7 @@ class Unold_Conductivity_Measurement_Library(ConductivityMeasurementLibrary, Ent
                         name=f"{x_pos[ix]},{y_pos[iy]}"),
                     )
             self.measurements = measurements
-        super(Unold_Conductivity_Measurement_Library,
+        super(UnoldConductivityMeasurementLibrary,
               self).normalize(archive, logger)
 
 
@@ -412,13 +417,13 @@ class Unold_Lab_Substance(Substance, EntryData):
     pass
 
 
-class Unold_Thermal_Evaporation(ThermalEvaporation, EntryData):
+class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
     '''
     Class autogenerated from yaml schema.
     '''
     m_def = Section(
-        categories=[Unold_Lab_Category],
-        label='Thermal Evaporation Process',
+        label='Unold Lab Thermal Evaporation',
+        categories=[UnoldLabCategory],
         links=["http://purl.obolibrary.org/obo/CHMO_0001360"],
         a_plot=[
             dict(
@@ -586,7 +591,7 @@ class Unold_Thermal_Evaporation(ThermalEvaporation, EntryData):
                 steps.append(step)
             self.steps = steps
 
-        super(Unold_Thermal_Evaporation, self).normalize(archive, logger)
+        super(UnoldThermalEvaporation, self).normalize(archive, logger)
 
 
 m_package.__init_metainfo__()
