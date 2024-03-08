@@ -5,9 +5,9 @@ normalize:
 plugins:
   include:
     - schemas/material_processing
-    - schemas/hzb_unold_lab
+    - schemas/hzb_combinatorial_libraries
   options:
     schemas/material_processing:
       python_package: nomad_material_processing
-    schemas/hzb_unold_lab:
-      python_package: hzb_unold_lab
+    schemas/hzb_combinatorial_libraries:
+      python_package: hzb_combinatorial_libraries
