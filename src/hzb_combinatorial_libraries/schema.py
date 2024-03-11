@@ -32,13 +32,13 @@ from nomad.datamodel.data import EntryData
 import datetime
 
 from nomad_material_processing.physical_vapor_deposition import (
-    PVDChamberEnvironment,
-    PVDMaterialEvaporationRate,
-    PVDMaterialSource,
-    PVDPressure,
-    PVDSourcePower,
-    PVDSubstrate,
-    PVDSubstrateTemperature,
+    # PVDChamberEnvironment,
+    # PVDMaterialEvaporationRate,
+    # PVDMaterialSource,
+    # PVDPressure,
+    # PVDSourcePower,
+    # PVDSubstrate,
+    # PVDSubstrateTemperature,
     ThermalEvaporation,
     ThermalEvaporationHeater,
     ThermalEvaporationHeaterTemperature,
@@ -146,7 +146,7 @@ class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
             for item in os.listdir(path):
                 if not os.path.isfile(os.path.join(path, item)):
                     continue
-                if not item.startswith(f"{search_key}#") and item.endswith(".bmp"):
+                if not (item.startswith(f"{search_key}#") and item.endswith(".bmp")):
                     continue
                 images.append(item)
             self.images = images
@@ -173,7 +173,7 @@ class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
                 composition = [XRFComposition(name=col, amount=composition_data[col].iloc[i])
                                for col in composition_data.columns[1:]]
                 measurements.append(XRFSingleLibraryMeasurement(
-                    data_file=os.path.basename(os.path.join(self.data_folder, files[i])),
+                    data_file=[os.path.basename(os.path.join(self.data_folder, files[i]))],
                     position_x=position_axes[0][i % len_x],  # positions_array[0, i],
                     position_y=position_axes[1][i // len_x],  # positions_array[1, i],
                     # position_index=i,
@@ -185,8 +185,7 @@ class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
                     name=f"{position_axes[0][i % len_x]},{position_axes[1][i // len_x]}"),
                 )
             self.measurements = measurements
-        super(UnoldXRFMeasurementLibrary,
-              self).normalize(archive, logger)
+        super(UnoldXRFMeasurementLibrary, self).normalize(archive, logger)
 
 
 class UnoldUVvisReflectionMeasurementLibrary(UVvisMeasurementLibrary, EntryData):
@@ -468,128 +467,128 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
             normalized.
             logger (BoundLogger): A structlog logger.
         '''
-        if self.log_file:
-            import pandas as pd
-            import numpy as np
-            with archive.m_context.raw_file(self.log_file, 'r') as fh:
-                line = fh.readline().strip()
-                metadata = {}
-                while line.startswith('#'):
-                    if ':' in line:
-                        key = line.split(':')[0][1:].strip()
-                        value = str.join(':', line.split(':')[1:]).strip()
-                        metadata[key] = value
-                    line = fh.readline().strip()
-                df = pd.read_csv(fh, sep='\t')
-            self.datetime = datetime.datetime.strptime(
-                f'{metadata["Date"]}T{df["Time"].values[0]}',
-                r'%Y/%m/%dT%H:%M:%S',
-            )
-            self.end_time = datetime.datetime.strptime(
-                f'{metadata["Date"]}T{df["Time"].values[-1]}',
-                r'%Y/%m/%dT%H:%M:%S',
-            )
-            self.name = f'PVD-{metadata["process ID"]}'
-            self.location = 'Berlin, Germany'
-            self.lab_id = f'HZB_{metadata["operator"]}_{self.datetime.strftime(r"%Y%m%d")}_PVD-{metadata["process ID"]}'
+        # if self.log_file:
+        #     import pandas as pd
+        #     import numpy as np
+        #     with archive.m_context.raw_file(self.log_file, 'r') as fh:
+        #         line = fh.readline().strip()
+        #         metadata = {}
+        #         while line.startswith('#'):
+        #             if ':' in line:
+        #                 key = line.split(':')[0][1:].strip()
+        #                 value = str.join(':', line.split(':')[1:]).strip()
+        #                 metadata[key] = value
+        #             line = fh.readline().strip()
+        #         df = pd.read_csv(fh, sep='\t')
+        #     self.datetime = datetime.datetime.strptime(
+        #         f'{metadata["Date"]}T{df["Time"].values[0]}',
+        #         r'%Y/%m/%dT%H:%M:%S',
+        #     )
+        #     self.end_time = datetime.datetime.strptime(
+        #         f'{metadata["Date"]}T{df["Time"].values[-1]}',
+        #         r'%Y/%m/%dT%H:%M:%S',
+        #     )
+        #     self.name = f'PVD-{metadata["process ID"]}'
+        #     self.location = 'Berlin, Germany'
+        #     self.lab_id = f'HZB_{metadata["operator"]}_{self.datetime.strftime(r"%Y%m%d")}_PVD-{metadata["process ID"]}'
 
-            source_materials = {column[0]: column.split()[2] for column in df.columns if column[-1:] == 'T'}
+        #     source_materials = {column[0]: column.split()[2] for column in df.columns if column[-1:] == 'T'}
 
-            qcms = ['QCM1_1', 'QCM1_2', 'QCM2_1', 'QCM2_2']
-            qcms_source_number = {df[qcm[:-2]+" FILMNAM"+qcm[-2:]].values[0]: qcm for qcm in qcms}
-            try:
-                qcms_ordered = [qcms_source_number[int(source)] for source in source_materials]
-            except KeyError:
-                raise ValueError("Film names do not match source names.")
-            shutters = [f'{qcm[:-2]} SHTSRC{qcm[-2:]}' for qcm in qcms_ordered]
-            start_times = []
-            for shutter in shutters:
-                switch_times = df.loc[df[shutter].diff() != 0, 'Process Time in seconds'].values
-                for time in switch_times:
-                    if not any(abs(t - time) < 5 for t in start_times):
-                        start_times.append(time)
-            start_times.append(df.iloc[-1, 1])
-            substances = {
-                source_nr: create_archive(
-                    entity=Unold_Lab_Substance(
-                        name=substance_translation.get(
-                            source_materials[source_nr],
-                            source_materials[source_nr]
-                        ),
-                    ),
-                    archive=archive,
-                    file_name=f'{source_materials[source_nr]}_substance.archive.json',
-                ) for source_nr in source_materials
-            }
-            steps = []
-            depositions = 0
-            for idx, time in enumerate(start_times[:-1]):
-                step = df.loc[
-                    (time <= df['Process Time in seconds'])
-                    & (df['Process Time in seconds'] < start_times[idx + 1])
-                ]
-                if step.loc[:, shutters].mode().any().any():
-                    depositions += 1
-                    name = f'deposition {depositions}'
-                elif idx == 0:
-                    name = 'pre'
-                else:
-                    name = 'post'
-                sources = []
-                for source_nr in source_materials:
-                    source = f'{source_nr} - {source_materials[source_nr]}'
-                    material_source = PVDMaterialSource(
-                        material=substances[source_nr],
-                        rate=PVDMaterialEvaporationRate(
-                            rate=1e-6 * step[f'{source} PV'],
-                            process_time=step['Process Time in seconds'],
-                            measurement_type='Quartz Crystal Microbalance',
-                        ),
-                    )
-                    evaporation_source = ThermalEvaporationHeater(
-                        temperature=ThermalEvaporationHeaterTemperature(
-                            temperature=step[f'{source} T'] + 273.15,
-                            process_time=step['Process Time in seconds'],
-                        ),
-                        power=PVDSourcePower(
-                            power=step[f'{source} Aout'],
-                            process_time=step['Process Time in seconds']
-                        ),
-                    )
-                    thermal_evaporation_source = ThermalEvaporationSource(
-                        name=source_materials[source_nr],
-                        material_source=material_source,
-                        evaporation_source=evaporation_source,
-                    )
-                    sources.append(thermal_evaporation_source)
-                substrate = PVDSubstrate(
-                    substrate=None,  # TODO: Add substrate
-                    temperature=PVDSubstrateTemperature(
-                        temperature=step['Substrate PV'] + 273.15,
-                        process_time=step['Process Time in seconds'],
-                        measurement_type='Heater thermocouple',
-                    ),
-                    heater='Resistive element',
-                    distance_to_source=[
-                        np.linalg.norm(np.array((41.54e-3, 26.06e-3, 201.12e-3)))
-                    ] * 4,
-                )
-                environment = PVDChamberEnvironment(
-                    pressure=PVDPressure(
-                        pressure=step['Vacuum Pressure2'] * 1e2,
-                        process_time=step['Process Time in seconds'],
-                    ),
-                )
-                step = ThermalEvaporationStep(
-                    name=name,
-                    creates_new_thin_film=step.loc[:, shutters].mode().any().any(),
-                    duration=start_times[idx + 1] - time,
-                    sources=sources,
-                    substrate=[substrate],
-                    environment=environment,
-                )
-                steps.append(step)
-            self.steps = steps
+        #     qcms = ['QCM1_1', 'QCM1_2', 'QCM2_1', 'QCM2_2']
+        #     qcms_source_number = {df[qcm[:-2]+" FILMNAM"+qcm[-2:]].values[0]: qcm for qcm in qcms}
+        #     try:
+        #         qcms_ordered = [qcms_source_number[int(source)] for source in source_materials]
+        #     except KeyError:
+        #         raise ValueError("Film names do not match source names.")
+        #     shutters = [f'{qcm[:-2]} SHTSRC{qcm[-2:]}' for qcm in qcms_ordered]
+        #     start_times = []
+        #     for shutter in shutters:
+        #         switch_times = df.loc[df[shutter].diff() != 0, 'Process Time in seconds'].values
+        #         for time in switch_times:
+        #             if not any(abs(t - time) < 5 for t in start_times):
+        #                 start_times.append(time)
+        #     start_times.append(df.iloc[-1, 1])
+        #     substances = {
+        #         source_nr: create_archive(
+        #             entity=Unold_Lab_Substance(
+        #                 name=substance_translation.get(
+        #                     source_materials[source_nr],
+        #                     source_materials[source_nr]
+        #                 ),
+        #             ),
+        #             archive=archive,
+        #             file_name=f'{source_materials[source_nr]}_substance.archive.json',
+        #         ) for source_nr in source_materials
+        #     }
+        #     steps = []
+        #     depositions = 0
+        #     for idx, time in enumerate(start_times[:-1]):
+        #         step = df.loc[
+        #             (time <= df['Process Time in seconds'])
+        #             & (df['Process Time in seconds'] < start_times[idx + 1])
+        #         ]
+        #         if step.loc[:, shutters].mode().any().any():
+        #             depositions += 1
+        #             name = f'deposition {depositions}'
+        #         elif idx == 0:
+        #             name = 'pre'
+        #         else:
+        #             name = 'post'
+        #         sources = []
+        #         for source_nr in source_materials:
+        #             source = f'{source_nr} - {source_materials[source_nr]}'
+        #             material_source = PVDMaterialSource(
+        #                 material=substances[source_nr],
+        #                 rate=PVDMaterialEvaporationRate(
+        #                     rate=1e-6 * step[f'{source} PV'],
+        #                     process_time=step['Process Time in seconds'],
+        #                     measurement_type='Quartz Crystal Microbalance',
+        #                 ),
+        #             )
+        #             evaporation_source = ThermalEvaporationHeater(
+        #                 temperature=ThermalEvaporationHeaterTemperature(
+        #                     temperature=step[f'{source} T'] + 273.15,
+        #                     process_time=step['Process Time in seconds'],
+        #                 ),
+        #                 power=PVDSourcePower(
+        #                     power=step[f'{source} Aout'],
+        #                     process_time=step['Process Time in seconds']
+        #                 ),
+        #             )
+        #             thermal_evaporation_source = ThermalEvaporationSource(
+        #                 name=source_materials[source_nr],
+        #                 material_source=material_source,
+        #                 evaporation_source=evaporation_source,
+        #             )
+        #             sources.append(thermal_evaporation_source)
+        #         substrate = PVDSubstrate(
+        #             substrate=None,  # TODO: Add substrate
+        #             temperature=PVDSubstrateTemperature(
+        #                 temperature=step['Substrate PV'] + 273.15,
+        #                 process_time=step['Process Time in seconds'],
+        #                 measurement_type='Heater thermocouple',
+        #             ),
+        #             heater='Resistive element',
+        #             distance_to_source=[
+        #                 np.linalg.norm(np.array((41.54e-3, 26.06e-3, 201.12e-3)))
+        #             ] * 4,
+        #         )
+        #         environment = PVDChamberEnvironment(
+        #             pressure=PVDPressure(
+        #                 pressure=step['Vacuum Pressure2'] * 1e2,
+        #                 process_time=step['Process Time in seconds'],
+        #             ),
+        #         )
+        #         step = ThermalEvaporationStep(
+        #             name=name,
+        #             creates_new_thin_film=step.loc[:, shutters].mode().any().any(),
+        #             duration=start_times[idx + 1] - time,
+        #             sources=sources,
+        #             substrate=[substrate],
+        #             environment=environment,
+        #         )
+        #         steps.append(step)
+        #     self.steps = steps
 
         super(UnoldThermalEvaporation, self).normalize(archive, logger)
 
