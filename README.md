@@ -8,7 +8,7 @@ The substances used in teh sources are created as seperate archives with the dat
 The main process archive is `hzb_unold_lab_pvd_example.data.archive.json`.
 
 
-# test
+# Nomad configuration for testing
 
 You can test this plugin by configuring the `nomad.yaml` in nomad repo as below:
     
