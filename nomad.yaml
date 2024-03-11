@@ -1,13 +1,13 @@
-normalize:
-  normalizers:
-    include:
-    - MetainfoNormalizer
+#normalize:
+#  normalizers:
+#    include:
+#    - MetainfoNormalizer
 plugins:
   include:
-    - schemas/material_processing
-    - schemas/hzb_combinatorial_libraries
+#    - schemas/material_processing
+    - parsers/hzb_combinatorial_libraries
   options:
-    schemas/material_processing:
-      python_package: nomad_material_processing
-    schemas/hzb_combinatorial_libraries:
+#    schemas/material_processing:
+#      python_package: nomad_material_processing
+    parsers/hzb_combinatorial_libraries:
       python_package: hzb_combinatorial_libraries

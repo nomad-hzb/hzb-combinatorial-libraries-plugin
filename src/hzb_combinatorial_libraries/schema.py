@@ -69,7 +69,7 @@ from nomad.datamodel.data import (
     EntryDataCategory,
 )
 
-m_package = Package(name='HZB Unold Lab')
+m_package = Package(name='hzb_combinatorial_libraries')
 
 substance_translation = {
     'PbI2': 'Lead Iodide',
