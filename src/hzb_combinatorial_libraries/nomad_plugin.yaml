@@ -1,7 +1,7 @@
 description: This is a plugin schema generated from a yaml schema.
 name: parsers/hzb_combinatorial_libraries
 plugin_type: parser
-mainfile_name_re: ^.*(spx.(xlsx|csv)|cond.csv|(reflection|transmission)_spec.csv|pvdp.*\.(t|c)sv)$
+mainfile_name_re: ^.*(PL.*|refl20.*|trans20.*)\.(t|c)sv|.*(spx\.(xlsx|csv))$
 mainfile_mime_re: '(application|text)/.*'
 parser_class_name: hzb_combinatorial_libraries.PVDPParser
 code_name: HZB Unold Lab Parser

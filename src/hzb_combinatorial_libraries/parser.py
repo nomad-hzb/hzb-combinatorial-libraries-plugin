@@ -39,7 +39,7 @@ from nomad.datamodel.metainfo.basesections import (
 from nomad_material_processing.utils import create_archive
 from baseclasses.helper.utilities import set_sample_reference
 from hzb_combinatorial_libraries.schema import (UnoldThermalEvaporation, UnoldXRFMeasurementLibrary, UnoldUVvisReflectionMeasurementLibrary,
-                                  UnoldUVvisTransmissionMeasurementLibrary, UnoldPLMeasurementLibrary, UnoldConductivityMeasurementLibrary)
+                                                UnoldUVvisTransmissionMeasurementLibrary, UnoldPLMeasurementLibrary, UnoldConductivityMeasurementLibrary)
 
 
 class ParsedFile(EntryData):
@@ -68,11 +68,14 @@ class PVDPParser(MatchingParser):
         if "pvdp" in file:
             entry = UnoldThermalEvaporation(log_file=file)
 
-        if file.endswith("reflection_spec.csv"):
+        if "refl20" in file:
             entry = UnoldUVvisReflectionMeasurementLibrary(data_file=file)
 
-        if file.endswith("transmission_spec.csv"):
+        if "trans20" in file:
             entry = UnoldUVvisTransmissionMeasurementLibrary(data_file=file)
+
+        if "PL" in file:
+            entry = UnoldPLMeasurementLibrary(data_file=file)
 
         if file.endswith("cond.csv"):
             entry = UnoldConductivityMeasurementLibrary(data_file=file)

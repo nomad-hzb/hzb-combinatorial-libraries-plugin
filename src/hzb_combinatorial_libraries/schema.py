@@ -17,14 +17,15 @@
 #
 import os
 
+from nomad.units import ureg
 from baseclasses.solar_energy import (
     PLMeasurement,
     UVvisMeasurementLibrary, UVvisDataSimple, UVvisSingleLibraryMeasurement, UVvisProperties,
-    ConductivityMeasurementLibrary, ConductivitySingleLibraryMeasurement  # , UVvisProperties
+    ConductivityMeasurementLibrary, ConductivitySingleLibraryMeasurement, PLPropertiesLibrary, PLDataSimple, PLSingleLibraryMeasurement
 )
 from baseclasses.characterizations import (
     XRFLibrary, XRFSingleLibraryMeasurement, XRFProperties, XRFComposition, XRFData)
-from baseclasses.helper.utilities import convert_datetime
+from baseclasses.helper.utilities import convert_datetime, set_sample_reference
 from baseclasses import (
     LibrarySample
 )
@@ -166,21 +167,21 @@ class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
             self.datetime = convert_datetime(
                 measurement_rows[0]["DateTime"], datetime_format="%Y-%m-%dT%H:%M:%S.%f", utc=False)
             self.energy = energy
-            composition_data = pd.read_excel(os.path.join(path, self.composition_file))
-            for i, spectrum in enumerate(spectra):
+            composition_data = pd.read_excel(os.path.join(path, self.composition_file), header=[0, 1], index_col=0)
 
-                # data = XRFData(intensity=spectrum)
-                composition = [XRFComposition(name=col, amount=composition_data[col].iloc[i])
-                               for col in composition_data.columns[1:]]
+            for i, spectrum in enumerate(spectra):
+                measurement_row = composition_data.loc[os.path.splitext(os.path.basename(files[i]))[0]]
+                composition = []
+                for v in measurement_row.items():
+                    if "%" not in v[0][1]:
+                        continue
+                    composition.append(XRFComposition(name=v[0][1], layer=v[0][0], amount=v[1]))
+
                 measurements.append(XRFSingleLibraryMeasurement(
                     data_file=[os.path.basename(os.path.join(self.data_folder, files[i]))],
                     position_x=position_axes[0][i % len_x],  # positions_array[0, i],
                     position_y=position_axes[1][i // len_x],  # positions_array[1, i],
-                    # position_index=i,
-                    # position_x_relative=position_axes[0][i % len_x],
-                    # position_y_relative=position_axes[1][i // len_x],
                     thickness=composition_data[composition_data.columns[0]].iloc[i],
-                    # data=data,
                     composition=composition,
                     name=f"{position_axes[0][i % len_x]},{position_axes[1][i // len_x]}"),
                 )
@@ -208,45 +209,52 @@ class UnoldUVvisReflectionMeasurementLibrary(UVvisMeasurementLibrary, EntryData)
 
     def normalize(self, archive, logger):
 
-        spec_key = "reflection_spec.csv"
-        reference_key = "reflection_reference.csv"
-        prefix = 'refl'
+        dark_key = "dark"
+        reference_key = "mirror"
         with archive.m_context.raw_file(archive.metadata.mainfile) as f:
             path = os.path.dirname(f.name)
 
         if not self.reference_file:
-
             for file in os.listdir(path):
-                if not file.endswith(reference_key):
+                if reference_key not in file:
                     continue
                 self.reference_file = file
 
-        if self.data_file and self.reference_file:
+        if not self.dark_file:
+            for file in os.listdir(path):
+                if dark_key not in file:
+                    continue
+                self.dark_file = file
+
+        if self.data_file and self.reference_file and self.dark_file:
             measurements = []
 
             from baseclasses.helper.file_parser.uvvis_parser import read_uvvis
-            reflectance, wavelength, x_pos, y_pos, md = read_uvvis(
-                [os.path.join(path, file) for file in [self.data_file, self.reference_file]], spec_key, reference_key, prefix)
+            md, df = read_uvvis(os.path.join(path, self.data_file),
+                                os.path.join(path, self.reference_file),
+                                os.path.join(path, self.dark_file))
+            self.datetime = convert_datetime(md["Date_Time"], datetime_format="%Y_%m_%d_%H%M", utc=False)
 
+            if not self.samples:
+                set_sample_reference(archive, self, md["Sample_ID"].strip("#"))
             if self.properties is None:
-                self.properties = UVvisProperties(integration_time=md['integration_time'].split("s")[0].strip(),
-                                                  number_of_averages=md['no. averages'])
+                self.properties = UVvisProperties(integration_time=md['integration time'].split(" ")[0].strip()
+                                                  * ureg(md['integration time'].split(" ")[1].strip()),
+                                                  spot_size=md['spot size'].split(" ")[0].strip()
+                                                  * ureg(md['spot size'].split(" ")[1].strip()))
+            self.wavelengths = df.columns[4:]
+            for i, row in df.iterrows():
+                data = UVvisDataSimple(intensity=row[df.columns[4:]])
 
-            self.wavelength = wavelength
-            for ix in range(len(x_pos)):
-                for iy in range(len(y_pos)):
-
-                    data = UVvisDataSimple(intensity=reflectance[ix, iy, :])
-
-                    measurements.append(UVvisSingleLibraryMeasurement(
-                        position_x=x_pos[ix],
-                        position_y=y_pos[iy],
-                        data=data,
-                        name=f"{x_pos[ix]},{y_pos[iy]}"),
-                    )
+                measurements.append(UVvisSingleLibraryMeasurement(
+                    position_x=row["x"],
+                    position_y=row["y"],
+                    position_z=row["z"],
+                    data=data,
+                    name=f"{row['x']},{row['y']},{row['z']}"),
+                )
             self.measurements = measurements
-        super(UnoldUVvisReflectionMeasurementLibrary,
-              self).normalize(archive, logger)
+        super(UnoldUVvisReflectionMeasurementLibrary, self).normalize(archive, logger)
 
 
 class UnoldUVvisTransmissionMeasurementLibrary(UVvisMeasurementLibrary, EntryData):
@@ -269,46 +277,49 @@ class UnoldUVvisTransmissionMeasurementLibrary(UVvisMeasurementLibrary, EntryDat
 
     def normalize(self, archive, logger):
 
-        spec_key = "transmission_spec.csv"
-        reference_key = "transmission_reference.csv"
-        prefix = 'trans'
-
+        dark_key = "dark"
+        reference_key = "light"
         with archive.m_context.raw_file(archive.metadata.mainfile) as f:
             path = os.path.dirname(f.name)
 
         if not self.reference_file:
-
             for file in os.listdir(path):
-                if not file.endswith(reference_key):
+                if reference_key not in file:
                     continue
                 self.reference_file = file
 
-        if self.data_file and self.reference_file:
+        if not self.dark_file:
+            for file in os.listdir(path):
+                if dark_key not in file:
+                    continue
+                self.dark_file = file
+
+        if self.data_file and self.reference_file and self.dark_file:
             measurements = []
 
             from baseclasses.helper.file_parser.uvvis_parser import read_uvvis
-            transmission, wavelength, x_pos, y_pos, md = read_uvvis(
-                [os.path.join(path, file) for file in [self.data_file, self.reference_file]], spec_key, reference_key, prefix)
-
-            # self.datetime = convert_datetime(os.path.getctime(os.path.join(
-            #     path, self.data_file)), utc=False, seconds=True)
-
+            md, df = read_uvvis(os.path.join(path, self.data_file),
+                                os.path.join(path, self.reference_file),
+                                os.path.join(path, self.dark_file))
+            self.datetime = convert_datetime(md["Date_Time"], datetime_format="%Y_%m_%d_%H%M", utc=False)
+            if self.samples is None:
+                set_sample_reference(archive, self, md["Sample_ID"].strip("#"))
             if self.properties is None:
-                self.properties = UVvisProperties(integration_time=md['integration_time'].split("s")[0].strip(),
-                                                  number_of_averages=md['no. averages'])
+                self.properties = UVvisProperties(integration_time=md['integration time'].split(" ")[0].strip()
+                                                  * ureg(md['integration time'].split(" ")[1].strip()),
+                                                  spot_size=md['spot size'].split(" ")[0].strip()
+                                                  * ureg(md['spot size'].split(" ")[1].strip()))
+            self.wavelengths = df.columns[4:]
+            for i, row in df.iterrows():
+                data = UVvisDataSimple(intensity=row[df.columns[4:]])
 
-            self.wavelength = wavelength
-            for ix in range(len(x_pos)):
-                for iy in range(len(y_pos)):
-
-                    data = UVvisDataSimple(intensity=transmission[ix, iy, :])
-
-                    measurements.append(UVvisSingleLibraryMeasurement(
-                        position_x=x_pos[ix],
-                        position_y=y_pos[iy],
-                        data=data,
-                        name=f"{x_pos[ix]},{y_pos[iy]}"),
-                    )
+                measurements.append(UVvisSingleLibraryMeasurement(
+                    position_x=row["x"],
+                    position_y=row["y"],
+                    position_z=row["z"],
+                    data=data,
+                    name=f"{row['x']},{row['y']},{row['z']}"),
+                )
             self.measurements = measurements
         super(UnoldUVvisTransmissionMeasurementLibrary,
               self).normalize(archive, logger)
@@ -333,45 +344,38 @@ class UnoldPLMeasurementLibrary(UVvisMeasurementLibrary, EntryData):
     )
 
     def normalize(self, archive, logger):
+        with archive.m_context.raw_file(archive.metadata.mainfile) as f:
+            path = os.path.dirname(f.name)
+        if self.data_file:
+            measurements = []
 
-        # spec_key = "transmission_spec.csv"
-        # reference_key = "transmission_reference.csv"
-        # prefix = 'trans'
+            from baseclasses.helper.file_parser.pl_parser import read_file_pl_unold
+            md, df = read_file_pl_unold(os.path.join(path, self.data_file))
+            self.datetime = convert_datetime(md["Date_Time"], datetime_format="%Y_%m_%d_%H%M", utc=False)
+            if self.samples is None:
+                set_sample_reference(archive, self, md["Sample_ID"].strip("#"))
+            if self.properties is None:
+                self.properties = PLPropertiesLibrary(integration_time=md['integration time'].split(" ")[0].strip()
+                                                      * ureg(md['integration time'].split(" ")[1].strip()),
+                                                      spot_size=md['spot size'].split(" ")[0].strip()
+                                                      * ureg(md['ispot size'].split(" ")[1].strip()),
+                                                      long_pass_filter=md['long pass filter'].split(" ")[0].strip()
+                                                      * ureg(md['long pass filter'].split(" ")[1].strip()),
+                                                      laser_wavelength=md['laser wavelength'].split(" ")[0].strip()
+                                                      * ureg(md['laser wavelength'].split(" ")[1].strip()))
+            self.wavelengths = df.columns[6:]
+            for i, row in df.iterrows():
+                data = PLDataSimple(intensity=row[df.columns[6:]])
 
-        # with archive.m_context.raw_file(archive.metadata.mainfile) as f:
-        #     path = os.path.dirname(f.name)
+                measurements.append(PLSingleLibraryMeasurement(
+                    position_x=row["x"],
+                    position_y=row["y"],
+                    position_z=row["z"],
+                    data=data,
+                    name=f"{row['x']},{row['y']},{row['z']}"),
+                )
+            self.measurements = measurements
 
-        # if not self.reference_file:
-
-        #     for file in os.listdir(path):
-        #         if not file.endswith(reference_key):
-        #             continue
-        #         self.reference_file = file
-
-        # if self.data_file and self.reference_file:
-        #     measurements = []
-
-        #     from baseclasses.helper.file_parser.uvvis_parser import read_uvvis
-        #     transmission, wavelength, x_pos, y_pos, md = read_uvvis(
-        #         [os.path.join(path, file) for file in [self.data_file, self.reference_file]], spec_key, reference_key, prefix)
-
-        #     if self.properties is None:
-        #         self.properties = UVvisProperties(integration_time=md['integration_time'].split("s")[0].strip(),
-        #                                           number_of_averages=md['no. averages'])
-
-        #     self.wavelength = wavelength
-        #     for ix in range(len(x_pos)):
-        #         for iy in range(len(y_pos)):
-
-        #             data = UVvisDataSimple(intensity=transmission[ix, iy, :])
-
-        #             measurements.append(UVvisSingleLibraryMeasurement(
-        #                 position_x=x_pos[ix],
-        #                 position_y=y_pos[iy],
-        #                 data=data,
-        #                 name=f"{x_pos[ix]},{y_pos[iy]}"),
-        #             )
-        #     self.measurements = measurements
         super(UnoldPLMeasurementLibrary,
               self).normalize(archive, logger)
 
