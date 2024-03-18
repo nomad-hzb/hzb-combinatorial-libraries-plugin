@@ -108,7 +108,7 @@ class UnoldLibrary(LibrarySample, EntryData):
             msg = f'{self.lab_id}#'
             img = qrcode.make(msg)
             Im = ImageDraw.Draw(img)
-            fnt = ImageFont.truetype("Pillow/Tests/fonts/FreeSans.ttf", 30)
+            #fnt = ImageFont.truetype("Pillow/Tests/fonts/FreeSans.ttf", 30)
 
             # Add Text to an image
             Im.text((15, 15), f"{self.lab_id}")  # , font=fnt)
@@ -182,6 +182,7 @@ class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
                         continue
                     if "composition" not in layer_data[v[0][0]]:
                         layer_data[v[0][0]].update({"composition": []})
+                    # layer_data[v[0][0]]["composition"].append(XRFComposition(name=v[0][1], amount=v[1]))
                     layer_data[v[0][0]]["composition"].append(XRFComposition(name=v[0][1], amount=v[1]))
 
                 layers = []
