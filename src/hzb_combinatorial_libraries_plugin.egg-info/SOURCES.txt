@@ -1,0 +1,13 @@
+LICENSE
+README.md
+pyproject.toml
+setup.py
+src/hzb_combinatorial_libraries/__init__.py
+src/hzb_combinatorial_libraries/parser.py
+src/hzb_combinatorial_libraries/schema.py
+src/hzb_combinatorial_libraries_plugin.egg-info/PKG-INFO
+src/hzb_combinatorial_libraries_plugin.egg-info/SOURCES.txt
+src/hzb_combinatorial_libraries_plugin.egg-info/dependency_links.txt
+src/hzb_combinatorial_libraries_plugin.egg-info/requires.txt
+src/hzb_combinatorial_libraries_plugin.egg-info/top_level.txt
+tests/test_schema.py

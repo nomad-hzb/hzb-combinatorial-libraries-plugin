@@ -111,7 +111,7 @@ class UnoldLibrary(LibrarySample, EntryData):
             fnt = ImageFont.truetype("Pillow/Tests/fonts/FreeSans.ttf", 30)
 
             # Add Text to an image
-            Im.text((15, 15), f"{self.lab_id}", font=fnt)
+            Im.text((15, 15), f"{self.lab_id}")  # , font=fnt)
             qr_file_name = f"{self.lab_id}.png"
             img.save(os.path.join(path, qr_file_name), dpi=(2000, 2000))
             self.qr_code = qr_file_name
