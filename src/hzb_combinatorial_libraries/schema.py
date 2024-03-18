@@ -368,7 +368,6 @@ class UnoldPLMeasurementLibrary(PLMeasurementLibrary, EntryData):
 
             from baseclasses.helper.file_parser.pl_parser import read_file_pl_unold
             md, df = read_file_pl_unold(os.path.join(path, self.data_file))
-            print(md)
             self.datetime = convert_datetime(md["Date_Time"], datetime_format="%Y_%m_%d_%H%M", utc=False)
             if not self.samples:
                 set_sample_reference(archive, self, md["Sample_ID"].strip("#"))
@@ -446,25 +445,25 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
         label='Unold Lab Thermal Evaporation',
         categories=[UnoldLabCategory],
         links=["http://purl.obolibrary.org/obo/CHMO_0001360"],
-        a_plot=[
-            dict(
-                x='steps/:/sources/:/material_source/rate/process_time',
-                y='steps/:/sources/:/material_source/rate/rate',
-            ),
-            dict(
-                x='steps/:/sources/:/evaporation_source/temperature/process_time',
-                y='steps/:/sources/:/evaporation_source/temperature/temperature',
-            ),
-            dict(
-                x='steps/:/environment/pressure/process_time',
-                y='steps/:/environment/pressure/pressure',
-                layout=dict(
-                    yaxis=dict(
-                        type='log',
-                    ),
-                ),
-            ),
-        ],
+        # a_plot=[
+        #     dict(
+        #         x='steps/:/sources/:/material_source/rate/process_time',
+        #         y='steps/:/sources/:/material_source/rate/rate',
+        #     ),
+        #     dict(
+        #         x='steps/:/sources/:/evaporation_source/temperature/process_time',
+        #         y='steps/:/sources/:/evaporation_source/temperature/temperature',
+        #     ),
+        #     dict(
+        #         x='steps/:/environment/pressure/process_time',
+        #         y='steps/:/environment/pressure/pressure',
+        #         layout=dict(
+        #             yaxis=dict(
+        #                 type='log',
+        #             ),
+        #         ),
+        #     ),
+        # ],
     )
     log_file = Quantity(
         type=str,

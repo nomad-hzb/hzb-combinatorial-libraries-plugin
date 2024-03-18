@@ -65,7 +65,7 @@ class PVDPParser(MatchingParser):
         entry = None
         file = mainfile.split('/')[-1]
 
-        if "pvdp" in file:
+        if "pvd" in file.lower():
             entry = UnoldThermalEvaporation(log_file=file)
 
         if "refl20" in file:
