@@ -21,10 +21,10 @@ from nomad.units import ureg
 from baseclasses.solar_energy import (
     PLMeasurement,
     UVvisMeasurementLibrary, UVvisDataSimple, UVvisSingleLibraryMeasurement, UVvisProperties,
-    ConductivityMeasurementLibrary, ConductivitySingleLibraryMeasurement, PLPropertiesLibrary, PLDataSimple, PLSingleLibraryMeasurement
+    ConductivityMeasurementLibrary, ConductivitySingleLibraryMeasurement, PLPropertiesLibrary, PLDataSimple, PLSingleLibraryMeasurement, PLMeasurementLibrary
 )
 from baseclasses.characterizations import (
-    XRFLibrary, XRFSingleLibraryMeasurement, XRFProperties, XRFComposition, XRFData)
+    XRFLibrary, XRFSingleLibraryMeasurement, XRFProperties, XRFComposition, XRFData, XRFLayer)
 from baseclasses.helper.utilities import convert_datetime, set_sample_reference
 from baseclasses import (
     LibrarySample
@@ -171,19 +171,33 @@ class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
 
             for i, spectrum in enumerate(spectra):
                 measurement_row = composition_data.loc[os.path.splitext(os.path.basename(files[i]))[0]]
-                composition = []
+                layer_data = {}
                 for v in measurement_row.items():
+                    if v[0][0] not in layer_data:
+                        layer_data.update({v[0][0]: {}})
+                    if "Thick" in v[0][1]:
+                        layer_data.update({v[0][0]: {"thickness": v[1]}})
+                        continue
                     if "%" not in v[0][1]:
                         continue
-                    composition.append(XRFComposition(name=v[0][1], layer=v[0][0], amount=v[1]))
+                    if "composition" not in layer_data[v[0][0]]:
+                        layer_data[v[0][0]].update({"composition": []})
+                    layer_data[v[0][0]]["composition"].append(XRFComposition(name=v[0][1], amount=v[1]))
+
+                layers = []
+                for key, layer in layer_data.items():
+                    layers.append(XRFLayer(
+                        layer=key,
+                        composition=layer.get("composition", None),
+                        thickness=layer.get("thickness", None)
+                    ))
 
                 measurements.append(XRFSingleLibraryMeasurement(
                     data_file=[os.path.basename(os.path.join(self.data_folder, files[i]))],
                     position_x=position_axes[0][i % len_x],  # positions_array[0, i],
                     position_y=position_axes[1][i // len_x],  # positions_array[1, i],
-                    thickness=composition_data[composition_data.columns[0]].iloc[i],
-                    composition=composition,
-                    name=f"{position_axes[0][i % len_x]},{position_axes[1][i // len_x]}"),
+                    layer=layers,
+                    name=f"{position_axes[0][i % len_x]},{position_axes[1][i // len_x]}")
                 )
             self.measurements = measurements
         super(UnoldXRFMeasurementLibrary, self).normalize(archive, logger)
@@ -202,6 +216,7 @@ class UnoldUVvisReflectionMeasurementLibrary(UVvisMeasurementLibrary, EntryData)
             {
                 'x': 'wavelength', 'y': 'measurements/:/data/intensity', 'layout': {
                     'yaxis': {
+                        "range": [0, 1],
                         "fixedrange": False}, 'xaxis': {
                         "fixedrange": False}}, "config": {
                             "scrollZoom": True, 'staticPlot': False, }}]
@@ -209,6 +224,7 @@ class UnoldUVvisReflectionMeasurementLibrary(UVvisMeasurementLibrary, EntryData)
 
     def normalize(self, archive, logger):
 
+        key = "refl"
         dark_key = "dark"
         reference_key = "mirror"
         with archive.m_context.raw_file(archive.metadata.mainfile) as f:
@@ -216,13 +232,13 @@ class UnoldUVvisReflectionMeasurementLibrary(UVvisMeasurementLibrary, EntryData)
 
         if not self.reference_file:
             for file in os.listdir(path):
-                if reference_key not in file:
+                if reference_key not in file or key not in file:
                     continue
                 self.reference_file = file
 
         if not self.dark_file:
             for file in os.listdir(path):
-                if dark_key not in file:
+                if dark_key not in file or key not in file:
                     continue
                 self.dark_file = file
 
@@ -242,7 +258,7 @@ class UnoldUVvisReflectionMeasurementLibrary(UVvisMeasurementLibrary, EntryData)
                                                   * ureg(md['integration time'].split(" ")[1].strip()),
                                                   spot_size=md['spot size'].split(" ")[0].strip()
                                                   * ureg(md['spot size'].split(" ")[1].strip()))
-            self.wavelengths = df.columns[4:]
+            self.wavelength = df.columns[4:]
             for i, row in df.iterrows():
                 data = UVvisDataSimple(intensity=row[df.columns[4:]])
 
@@ -277,6 +293,7 @@ class UnoldUVvisTransmissionMeasurementLibrary(UVvisMeasurementLibrary, EntryDat
 
     def normalize(self, archive, logger):
 
+        key = "trans"
         dark_key = "dark"
         reference_key = "light"
         with archive.m_context.raw_file(archive.metadata.mainfile) as f:
@@ -284,13 +301,13 @@ class UnoldUVvisTransmissionMeasurementLibrary(UVvisMeasurementLibrary, EntryDat
 
         if not self.reference_file:
             for file in os.listdir(path):
-                if reference_key not in file:
+                if reference_key not in file or key not in file:
                     continue
                 self.reference_file = file
 
         if not self.dark_file:
             for file in os.listdir(path):
-                if dark_key not in file:
+                if dark_key not in file or key not in file:
                     continue
                 self.dark_file = file
 
@@ -302,14 +319,14 @@ class UnoldUVvisTransmissionMeasurementLibrary(UVvisMeasurementLibrary, EntryDat
                                 os.path.join(path, self.reference_file),
                                 os.path.join(path, self.dark_file))
             self.datetime = convert_datetime(md["Date_Time"], datetime_format="%Y_%m_%d_%H%M", utc=False)
-            if self.samples is None:
+            if not self.samples:
                 set_sample_reference(archive, self, md["Sample_ID"].strip("#"))
             if self.properties is None:
                 self.properties = UVvisProperties(integration_time=md['integration time'].split(" ")[0].strip()
                                                   * ureg(md['integration time'].split(" ")[1].strip()),
                                                   spot_size=md['spot size'].split(" ")[0].strip()
                                                   * ureg(md['spot size'].split(" ")[1].strip()))
-            self.wavelengths = df.columns[4:]
+            self.wavelength = df.columns[4:]
             for i, row in df.iterrows():
                 data = UVvisDataSimple(intensity=row[df.columns[4:]])
 
@@ -325,7 +342,7 @@ class UnoldUVvisTransmissionMeasurementLibrary(UVvisMeasurementLibrary, EntryDat
               self).normalize(archive, logger)
 
 
-class UnoldPLMeasurementLibrary(UVvisMeasurementLibrary, EntryData):
+class UnoldPLMeasurementLibrary(PLMeasurementLibrary, EntryData):
     m_def = Section(
         label='Unold lab PL Measurement Library',
         categories=[UnoldLabCategory],
@@ -351,19 +368,20 @@ class UnoldPLMeasurementLibrary(UVvisMeasurementLibrary, EntryData):
 
             from baseclasses.helper.file_parser.pl_parser import read_file_pl_unold
             md, df = read_file_pl_unold(os.path.join(path, self.data_file))
+            print(md)
             self.datetime = convert_datetime(md["Date_Time"], datetime_format="%Y_%m_%d_%H%M", utc=False)
-            if self.samples is None:
+            if not self.samples:
                 set_sample_reference(archive, self, md["Sample_ID"].strip("#"))
             if self.properties is None:
                 self.properties = PLPropertiesLibrary(integration_time=md['integration time'].split(" ")[0].strip()
                                                       * ureg(md['integration time'].split(" ")[1].strip()),
-                                                      spot_size=md['spot size'].split(" ")[0].strip()
-                                                      * ureg(md['ispot size'].split(" ")[1].strip()),
+                                                      spot_size=md['spot size'].split(" ")[0].strip(),
+                                                      # * ureg(md['spot size'].split(" ")[1].strip()),
                                                       long_pass_filter=md['long pass filter'].split(" ")[0].strip()
                                                       * ureg(md['long pass filter'].split(" ")[1].strip()),
                                                       laser_wavelength=md['laser wavelength'].split(" ")[0].strip()
                                                       * ureg(md['laser wavelength'].split(" ")[1].strip()))
-            self.wavelengths = df.columns[6:]
+            self.wavelength = df.columns[6:]
             for i, row in df.iterrows():
                 data = PLDataSimple(intensity=row[df.columns[6:]])
 
