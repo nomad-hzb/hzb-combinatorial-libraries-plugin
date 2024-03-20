@@ -108,7 +108,7 @@ class UnoldLibrary(LibrarySample, EntryData):
             msg = f'{self.lab_id}#'
             img = qrcode.make(msg)
             Im = ImageDraw.Draw(img)
-            #fnt = ImageFont.truetype("Pillow/Tests/fonts/FreeSans.ttf", 30)
+            # fnt = ImageFont.truetype("Pillow/Tests/fonts/FreeSans.ttf", 30)
 
             # Add Text to an image
             Im.text((15, 15), f"{self.lab_id}")  # , font=fnt)
@@ -168,7 +168,7 @@ class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
                 measurement_rows[0]["DateTime"], datetime_format="%Y-%m-%dT%H:%M:%S.%f", utc=False)
             self.energy = energy
             composition_data = pd.read_excel(os.path.join(path, self.composition_file), header=[0, 1], index_col=0)
-
+            material_name = ''
             for i, spectrum in enumerate(spectra):
                 measurement_row = composition_data.loc[os.path.splitext(os.path.basename(files[i]))[0]]
                 layer_data = {}
@@ -182,8 +182,10 @@ class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
                         continue
                     if "composition" not in layer_data[v[0][0]]:
                         layer_data[v[0][0]].update({"composition": []})
+                    if v[0][1] not in material_name:
+                        material_name += f"{v[0][0]}:{v[0][1]},"
+                    layer_data[v[0][0]]["composition"].append(XRFComposition(amount=v[1]))
                     # layer_data[v[0][0]]["composition"].append(XRFComposition(name=v[0][1], amount=v[1]))
-                    layer_data[v[0][0]]["composition"].append(XRFComposition(name=v[0][1], amount=v[1]))
 
                 layers = []
                 for key, layer in layer_data.items():
@@ -201,6 +203,7 @@ class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
                     name=f"{position_axes[0][i % len_x]},{position_axes[1][i // len_x]}")
                 )
             self.measurements = measurements
+            self.material_names = material_name
         super(UnoldXRFMeasurementLibrary, self).normalize(archive, logger)
 
 
