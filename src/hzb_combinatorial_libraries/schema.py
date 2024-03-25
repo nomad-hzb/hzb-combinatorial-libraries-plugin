@@ -16,12 +16,14 @@
 # limitations under the License.
 #
 import os
+import pandas as pd
 
 from nomad.units import ureg
 from baseclasses.solar_energy import (
     PLMeasurement,
     UVvisMeasurementLibrary, UVvisDataSimple, UVvisSingleLibraryMeasurement, UVvisProperties,
-    ConductivityMeasurementLibrary, ConductivitySingleLibraryMeasurement, PLPropertiesLibrary, PLDataSimple, PLSingleLibraryMeasurement, PLMeasurementLibrary
+    ConductivityMeasurementLibrary, ConductivitySingleLibraryMeasurement, PLPropertiesLibrary, PLDataSimple, PLSingleLibraryMeasurement, PLMeasurementLibrary,
+    TimeResolvedPhotoluminescenceMeasurementLibrary, TimeResolvedPhotoluminescenceSingleLibraryMeasurement, TRPLPropertiesBasic, TRPLDataSimple
 )
 from baseclasses.characterizations import (
     XRFLibrary, XRFSingleLibraryMeasurement, XRFProperties, XRFComposition, XRFData, XRFLayer)
@@ -117,6 +119,33 @@ class UnoldLibrary(LibrarySample, EntryData):
             self.qr_code = qr_file_name
 
 
+def load_XRF_txt(file):
+    with open(file) as input_file:
+        head = [next(input_file) for _ in range(3)]
+    pos = [0]
+    ns = False
+    for i, c in enumerate(head[2]):
+        if c != " ":
+            ns = True
+        if c == " " and ns and head[0][i] == " ":
+            pos.append(i)
+            ns = False
+    pos.append(-1)
+    col = []
+    c_old = ''
+    for i in range(len(pos)-1):
+        c1 = head[0][pos[i]:pos[i+1]].strip() if head[0][pos[i]:pos[i+1]].strip() else c_old
+        c2 = head[1][pos[i]:pos[i+1]].strip()
+        col.append((c1, c2))
+        c_old = c1
+    if "," in head[2]:
+        composition_data = pd.read_csv(file, names=col, header=None, skiprows=2, sep="\s{2,}", decimal=",", index_col=0)
+    else:
+        composition_data = pd.read_csv(file, names=col, header=None, skiprows=2, sep="\s{2,}", decimal=".", index_col=0)
+
+    return composition_data
+
+
 class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
     m_def = Section(
         label='Unold lab XRF Measurement Library',
@@ -152,13 +181,18 @@ class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
                 images.append(item)
             self.images = images
 
-        if self.composition_file:
+        if self.composition_file and self.data_folder:
+            file_path = os.path.join(path, self.composition_file)
+            try:
+                with open(file_path) as input_file:
+                    pass
+            except:
+                file_path = os.path.join(path, self.data_folder, self.composition_file)
             measurements = []
 
             data_folder = os.path.join(path, self.data_folder)
 
             from baseclasses.helper.file_parser.xrf_spx_parser import read as xrf_read
-            import pandas as pd
             files = [os.path.join(data_folder, file) for file in os.listdir(data_folder) if file.endswith(".spx")]
             files.sort()
 
@@ -167,7 +201,7 @@ class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
             self.datetime = convert_datetime(
                 measurement_rows[0]["DateTime"], datetime_format="%Y-%m-%dT%H:%M:%S.%f", utc=False)
             self.energy = energy
-            composition_data = pd.read_excel(os.path.join(path, self.composition_file), header=[0, 1], index_col=0)
+            composition_data = load_XRF_txt(file_path)
             material_name = ''
             for i, spectrum in enumerate(spectra):
                 measurement_row = composition_data.loc[os.path.splitext(os.path.basename(files[i]))[0]]
@@ -275,6 +309,54 @@ class UnoldUVvisReflectionMeasurementLibrary(UVvisMeasurementLibrary, EntryData)
                 )
             self.measurements = measurements
         super(UnoldUVvisReflectionMeasurementLibrary, self).normalize(archive, logger)
+
+
+class UnoldTRPLMeasurementLibrary(TimeResolvedPhotoluminescenceMeasurementLibrary, EntryData):
+    m_def = Section(
+        labels='Unold lab TRPL Measurement Library',
+        categories=[UnoldLabCategory],
+        a_eln=dict(hide=['instruments', 'steps', 'results', 'lab_id'],
+                   properties=dict(
+            order=[
+                "name",
+            ]))
+    )
+
+    def normalize(self, archive, logger):
+        with archive.m_context.raw_file(archive.metadata.mainfile) as f:
+            path = os.path.dirname(f.name)
+        if self.data_file:
+            import xarray as xr
+            data = xr.load_dataset(os.path.join(path, self.data_file))
+            # self.time = data.trpl_t.values * ureg(data.trpl_t.units)
+            self.properties = TRPLPropertiesBasic(
+                repetition_rate=data.trpl_repetition_rate.values*ureg(data.trpl_repetition_rate.units),
+                laser_power=data.trpl_power.values*ureg(data.trpl_power.units),
+                excitation_peak_wavelength=data.trpl_excitation_wavelength.values *
+                ureg(data.trpl_excitation_wavelength.units),
+                detection_wavelength=data.trpl_detection_wavelength.values*ureg(data.trpl_detection_wavelength.units),
+                spotsize=data.trpl_counts.spot_size_um2 * ureg("um**2"),
+                excitation_attenuation_filter=data.trpl_counts.attenuation,
+                integration_time=data.trpl_counts.integration_time_s * ureg("s")
+
+            )
+            self.datetime = convert_datetime(data.datetime.start_datetime,
+                                             datetime_format="%Y-%m-%dT%H:%M:%S.%f", utc=False)
+            # measurements = []
+
+            # for i, pos_x in enumerate(data.x.values):
+            #     for j, pos_y in enumerate(data.y.values):
+            #         trpl_data = TRPLDataSimple(counts=data.trpl_counts[i, j, 0, 0, 0, 0, :].values)
+
+            #         measurements.append(TimeResolvedPhotoluminescenceSingleLibraryMeasurement(
+            #             position_x=pos_x * ureg(data.x.units),
+            #             position_y=pos_y*ureg(data.y.units),
+            #             data=trpl_data,
+            #             name=f"{pos_x},{pos_x}"),
+            #         )
+            # self.measurements = measurements
+
+        super(UnoldTRPLMeasurementLibrary, self).normalize(archive, logger)
 
 
 class UnoldUVvisTransmissionMeasurementLibrary(UVvisMeasurementLibrary, EntryData):
