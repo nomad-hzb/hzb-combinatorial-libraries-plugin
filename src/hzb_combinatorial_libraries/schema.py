@@ -54,8 +54,12 @@ from structlog.stdlib import (
 from nomad.metainfo import (
     Package,
     Section,
+    SubSection,
     Quantity,
 )
+
+from nomad.datamodel.metainfo.basesections import CompositeSystemReference
+
 from nomad.datamodel.metainfo.annotations import ELNComponentEnum
 from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation,
@@ -616,7 +620,7 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
         super(UnoldThermalEvaporation, self).normalize(archive, logger)
 
 
-class UnoldPixel(CombinatorialSample, EntryData):
+class Pixel(CombinatorialSample, EntryData):
     m_def = Section(
         categories=[UnoldLabCategory],
         label = 'UnoldPixel'
@@ -641,11 +645,24 @@ class UnoldPixel(CombinatorialSample, EntryData):
         a_eln = dict(component = 'NumberEditQuantity')
     )
 
+    FWHM = Quantity(
+        type=np.dtype(np.float64),
+        description='FWHM based on PL measurements.',
+        a_eln=dict(component='NumberEditQuantity')
+    )
+
+    samples = SubSection(
+        section_def=CompositeSystemReference,
+        description='''
+          The samples as that have undergone the process.
+          ''',
+        repeats=True,
+    )
+
     def normalize(self, archive, logger):
         super(CombinatorialSample, self).normalize(archive, logger)
-        self.lab_id = str('4025-12')
+        self.lab_id = '4025-12' # todo hard coded for now
         return
-
 
 
 m_package.__init_metainfo__()
