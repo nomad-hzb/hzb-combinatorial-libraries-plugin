@@ -662,6 +662,8 @@ class Pixel(CombinatorialSample, EntryData):
     def normalize(self, archive, logger):
         super(CombinatorialSample, self).normalize(archive, logger)
         self.lab_id = '4025-12' # todo hard coded for now
+        if self.lab_id:
+            set_sample_reference(archive, self, self.lab_id)
         return
 
 
