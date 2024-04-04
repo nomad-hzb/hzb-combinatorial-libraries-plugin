@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 import os
-
+import numpy as np
 from nomad.units import ureg
 from baseclasses.solar_energy import (
     PLMeasurement,
@@ -31,6 +31,7 @@ from baseclasses import (
 )
 from nomad.datamodel.data import EntryData
 import datetime
+from nomad_material_processing.combinatorial import CombinatorialSample
 
 from nomad_material_processing.physical_vapor_deposition import (
     # PVDChamberEnvironment,
@@ -55,7 +56,7 @@ from nomad.metainfo import (
     Section,
     Quantity,
 )
-
+from nomad.datamodel.metainfo.annotations import ELNComponentEnum
 from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation,
     BrowserAnnotation,
@@ -613,6 +614,38 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
         #     self.steps = steps
 
         super(UnoldThermalEvaporation, self).normalize(archive, logger)
+
+
+class UnoldPixel(CombinatorialSample, EntryData):
+    m_def = Section(
+        categories=[UnoldLabCategory],
+        label = 'UnoldPixel'
+    )
+
+    # Extracted/calculated Quantities
+    bandgap = Quantity(
+        type = np.dtype(np.float64),
+        description = 'Band gap value in eV.',
+        a_eln = dict(component = 'NumberEditQuantity')
+    )
+
+    PLQY = Quantity(
+        type = np.dtype(np.float64),
+        description = 'Energy integrated value of the PL spectrum.',
+        a_eln = dict(component = 'NumberEditQuantity')
+    )
+
+    Voc = Quantity(
+        type = np.dtype(np.float64),
+        description = 'Estimated open circuit voltage based on PL measurements.',
+        a_eln = dict(component = 'NumberEditQuantity')
+    )
+
+    def normalize(self, archive, logger):
+        super(CombinatorialSample, self).normalize(archive, logger)
+        self.lab_id = str('4025-12')
+        return
+
 
 
 m_package.__init_metainfo__()
