@@ -29,6 +29,7 @@ from baseclasses.helper.utilities import convert_datetime, set_sample_reference
 from baseclasses import (
     LibrarySample
 )
+from nomad_material_processing.combinatorial import ContinuousCombiSample
 from nomad.datamodel.data import EntryData
 import datetime
 from nomad_material_processing.combinatorial import CombinatorialSample
@@ -620,7 +621,7 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
         super(UnoldThermalEvaporation, self).normalize(archive, logger)
 
 
-class Pixel(CombinatorialSample, EntryData):
+class Pixel(ContinuousCombiSample, EntryData):
     m_def = Section(
         categories=[UnoldLabCategory],
         label = 'UnoldPixel'
@@ -660,7 +661,7 @@ class Pixel(CombinatorialSample, EntryData):
     )
 
     def normalize(self, archive, logger):
-        super(CombinatorialSample, self).normalize(archive, logger)
+        super(ContinuousCombiSample, self).normalize(archive, logger)
         self.lab_id = '4025-12' # todo hard coded for now
         if self.lab_id:
             set_sample_reference(archive, self, self.lab_id)
