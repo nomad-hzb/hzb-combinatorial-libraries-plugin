@@ -33,7 +33,6 @@ from nomad_material_processing.combinatorial import ContinuousCombiSample
 from nomad.datamodel.data import EntryData
 import datetime
 from nomad_material_processing.combinatorial import CombinatorialSample
-from nomad_material_processing import ThinFilm
 from nomad_material_processing.physical_vapor_deposition import (
     # PVDChamberEnvironment,
     # PVDMaterialEvaporationRate,
@@ -621,7 +620,7 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
         super(UnoldThermalEvaporation, self).normalize(archive, logger)
 
 
-class Pixel(ContinuousCombiSample, ThinFilm, EntryData):
+class Pixel(ContinuousCombiSample, EntryData):
     m_def = Section(
         categories=[UnoldLabCategory],
         label = 'UnoldPixel'
