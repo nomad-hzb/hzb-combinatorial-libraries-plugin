@@ -33,7 +33,7 @@ from nomad_material_processing.combinatorial import ContinuousCombiSample
 from nomad.datamodel.data import EntryData
 import datetime
 from nomad_material_processing.combinatorial import CombinatorialSample
-
+from nomad_material_processing import ThinFilm
 from nomad_material_processing.physical_vapor_deposition import (
     # PVDChamberEnvironment,
     # PVDMaterialEvaporationRate,
@@ -621,12 +621,31 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
         super(UnoldThermalEvaporation, self).normalize(archive, logger)
 
 
-class Pixel(ContinuousCombiSample, EntryData):
+class Pixel(ContinuousCombiSample, ThinFilm, EntryData):
     m_def = Section(
         categories=[UnoldLabCategory],
         label = 'UnoldPixel'
     )
-
+    thickness = Quantity(
+        type=np.dtype(np.float64),
+        unit='nm',
+        shape=[],
+        description="""
+            The thickness of the pixel.
+            """,
+        a_eln=dict(
+            component='NumberEditQuantity')
+    )
+    conductivity = Quantity(
+        type=np.dtype(np.float64),
+        unit='1/Ω',
+        shape=[],
+        description="""
+            The conductivity of the Pixel.
+            """,
+        a_eln=dict(
+            component='NumberEditQuantity')
+    )
     # Extracted/calculated Quantities
     bandgap = Quantity(
         type = np.dtype(np.float64),
