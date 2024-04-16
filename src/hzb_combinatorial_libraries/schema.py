@@ -122,6 +122,8 @@ class UnoldLibrary(LibrarySample, EntryData):
             self.qr_code = qr_file_name
 
 
+
+
 class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
     m_def = Section(
         label='Unold lab XRF Measurement Library',
@@ -653,19 +655,22 @@ class Pixel(ContinuousCombiSample, EntryData):
     )
 
     PLQY = Quantity(
-        type = np.dtype(np.float64),
+        type=np.dtype(np.float64),
+        unit='%',
         description = 'Energy integrated value of the PL spectrum.',
         a_eln = dict(component = 'NumberEditQuantity')
     )
 
-    Voc = Quantity(
-        type = np.dtype(np.float64),
+    Implied_Voc = Quantity(
+        type=np.dtype(np.float64),
+        unit='V',
         description = 'Estimated open circuit voltage based on PL measurements.',
         a_eln = dict(component = 'NumberEditQuantity')
     )
 
     FWHM = Quantity(
         type=np.dtype(np.float64),
+        unit='eV', # todo check if this is correct
         description='FWHM based on PL measurements.',
         a_eln=dict(component='NumberEditQuantity')
     )
