@@ -622,6 +622,49 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
         super(UnoldThermalEvaporation, self).normalize(archive, logger)
 
 
+class PixelProperty(EntryData):
+    m_def = Section(
+        categories=[UnoldLabCategory],
+        label = 'UnoldPixelProperty'
+    )
+    conductivity = Quantity(
+        type=np.dtype(np.float64),
+        # unit='1/Ω',
+        shape=[],
+        description="""
+                The conductivity of the Pixel.
+                """,
+        a_eln=dict(
+            component='NumberEditQuantity')
+    )
+    bandgap = Quantity(
+        type = np.dtype(np.float64),
+        description = 'Band gap value in eV.',
+        a_eln = dict(component = 'NumberEditQuantity')
+    )
+
+    PLQY = Quantity(
+        type=np.dtype(np.float64),
+        # unit='%',
+        description = 'Energy integrated value of the PL spectrum.',
+        a_eln = dict(component = 'NumberEditQuantity')
+    )
+
+    implied_voc = Quantity(
+        type=np.dtype(np.float64),
+        # unit='V',
+        description = 'Estimated open circuit voltage based on PL measurements.',
+        a_eln = dict(component = 'NumberEditQuantity')
+    )
+
+    FWHM = Quantity(
+        type=np.dtype(np.float64),
+        # unit='eV', # todo check if this is correct
+        description='FWHM based on PL measurements.',
+        a_eln=dict(component='NumberEditQuantity')
+    )
+
+
 class Pixel(ContinuousCombiSample, EntryData):
     m_def = Section(
         categories=[UnoldLabCategory],
@@ -637,44 +680,12 @@ class Pixel(ContinuousCombiSample, EntryData):
         a_eln=dict(
             component='NumberEditQuantity')
     )
-    conductivity = Quantity(
-        type=np.dtype(np.float64),
-        unit='1/Ω',
-        shape=[],
-        description="""
-            The conductivity of the Pixel.
-            """,
-        a_eln=dict(
-            component='NumberEditQuantity')
+    properties = SubSection(
+        section_def=PixelProperty,
+        description='''
+          The properties of the pixel.
+          ''',
     )
-    # Extracted/calculated Quantities
-    bandgap = Quantity(
-        type = np.dtype(np.float64),
-        description = 'Band gap value in eV.',
-        a_eln = dict(component = 'NumberEditQuantity')
-    )
-
-    PLQY = Quantity(
-        type=np.dtype(np.float64),
-        unit='%',
-        description = 'Energy integrated value of the PL spectrum.',
-        a_eln = dict(component = 'NumberEditQuantity')
-    )
-
-    Implied_Voc = Quantity(
-        type=np.dtype(np.float64),
-        unit='V',
-        description = 'Estimated open circuit voltage based on PL measurements.',
-        a_eln = dict(component = 'NumberEditQuantity')
-    )
-
-    FWHM = Quantity(
-        type=np.dtype(np.float64),
-        unit='eV', # todo check if this is correct
-        description='FWHM based on PL measurements.',
-        a_eln=dict(component='NumberEditQuantity')
-    )
-
     samples = SubSection(
         section_def=CompositeSystemReference,
         description='''
