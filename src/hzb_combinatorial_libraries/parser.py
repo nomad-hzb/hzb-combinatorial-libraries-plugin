@@ -80,7 +80,7 @@ class PVDPParser(MatchingParser):
         if "PL" in file:
             entry = UnoldPLMeasurementLibrary(data_file=file)
 
-        if file.endswith("cond.csv"):
+        if "resist" in file.lower():
             entry = UnoldConductivityMeasurementLibrary(data_file=file)
 
         if "xrf" in file.lower():

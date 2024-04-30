@@ -22,7 +22,7 @@ from nomad.units import ureg
 from baseclasses.solar_energy import (
     PLMeasurement,
     UVvisMeasurementLibrary, UVvisDataSimple, UVvisSingleLibraryMeasurement, UVvisProperties,
-    ConductivityMeasurementLibrary, ConductivitySingleLibraryMeasurement, PLPropertiesLibrary, PLDataSimple, PLSingleLibraryMeasurement, PLMeasurementLibrary,
+    ConductivityMeasurementLibrary, ConductivityProperties,  ConductivitySingleLibraryMeasurement, PLPropertiesLibrary, PLDataSimple, PLSingleLibraryMeasurement, PLMeasurementLibrary,
     TimeResolvedPhotoluminescenceMeasurementLibrary, TimeResolvedPhotoluminescenceSingleLibraryMeasurement, TRPLPropertiesBasic, TRPLDataSimple
 )
 from baseclasses.characterizations import (
@@ -503,18 +503,28 @@ class UnoldConductivityMeasurementLibrary(ConductivityMeasurementLibrary, EntryD
             measurements = []
 
             from baseclasses.helper.file_parser.conductivity_parser import read_conductivity
-            conductivity, x_pos, y_pos, md = read_conductivity(os.path.join(path, self.data_file))
-            self.datetime = convert_datetime(md.loc["Date:"][1], datetime_format="%Y-%m-%d %H:%M:%S", utc=False)
-            for ix in range(len(x_pos)):
-                for iy in range(len(y_pos)):
+            md, df = read_conductivity(os.path.join(path, self.data_file))
+            self.datetime = convert_datetime(md["Date_Time"], datetime_format="%Y_%m_%d_%H%M", utc=False)
+            if not self.samples:
+                set_sample_reference(archive, self, md["Sample_ID"].strip("#"))
+            if self.properties is None:
+                print(float(md['integration_time'].split(" ")[0].strip()), md['integration_time'].split(" ")[1].strip())
+                print(float(md['Configuration'].split(" ")[0].strip()), md['Configuration'].split(" ")[1].strip())
+                self.properties = ConductivityProperties(integration_time=float(md['integration_time'].split(" ")[0].strip())
+                                                         * ureg(md['integration_time'].split(" ")[1].strip()),
+                                                         configuration=float(md['Configuration'].split(" ")[0].strip())
+                                                         * ureg(md['Configuration'].split(" ")[1].strip()))
 
-                    measurements.append(ConductivitySingleLibraryMeasurement(
-                        position_x=x_pos[ix],
-                        position_y=y_pos[iy],
-                        conductivity=conductivity[ix, iy],
-                        name=f"{x_pos[ix]},{y_pos[iy]}"),
-                    )
+            for i, row in df.iterrows():
+                measurements.append(ConductivitySingleLibraryMeasurement(
+                    position_x=row["x"],
+                    position_y=row["y"],
+                    position_z=row["z"],
+                    conductivity=row["resistance"]*ureg("Gohm"),
+                    name=f"{row['x']},{row['y']},{row['z']}"),
+                )
             self.measurements = measurements
+
         super(UnoldConductivityMeasurementLibrary,
               self).normalize(archive, logger)
 
