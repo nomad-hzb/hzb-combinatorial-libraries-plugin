@@ -75,6 +75,8 @@ from nomad.datamodel.data import (
     EntryDataCategory,
 )
 
+from .utils import search_data
+
 m_package = Package(name='hzb_combinatorial_libraries')
 
 substance_translation = {
@@ -121,7 +123,12 @@ class UnoldLibrary(LibrarySample, EntryData):
             img.save(os.path.join(path, qr_file_name), dpi=(2000, 2000))
             self.qr_code = qr_file_name
 
-
+            # # search library related data
+            data = search_data(archive, self.lab_id, "UnoldPLMeasurementLibrary")
+            print(len(data))
+            print("data***", data)
+            print("*****************")
+            print("PL:", data[0])
 
 
 class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
@@ -376,6 +383,7 @@ class UnoldPLMeasurementLibrary(PLMeasurementLibrary, EntryData):
 
             from baseclasses.helper.file_parser.pl_parser import read_file_pl_unold
             md, df = read_file_pl_unold(os.path.join(path, self.data_file))
+            print("***read***", df)
             self.datetime = convert_datetime(md["Date_Time"], datetime_format="%Y_%m_%d_%H%M", utc=False)
             if not self.samples:
                 set_sample_reference(archive, self, md["Sample_ID"].strip("#"))
