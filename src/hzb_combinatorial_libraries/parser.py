@@ -39,7 +39,7 @@ from nomad.datamodel.metainfo.basesections import (
 from nomad_material_processing.utils import create_archive
 from baseclasses.helper.utilities import set_sample_reference
 from hzb_combinatorial_libraries.schema import (UnoldThermalEvaporation, UnoldXRFMeasurementLibrary, UnoldUVvisReflectionMeasurementLibrary,
-                                                UnoldUVvisTransmissionMeasurementLibrary, UnoldPLMeasurementLibrary, UnoldConductivityMeasurementLibrary)
+                                                UnoldUVvisTransmissionMeasurementLibrary, UnoldPLMeasurementLibrary, UnoldConductivityMeasurementLibrary, UnoldTRPLMeasurementLibrary)
 
 
 class ParsedFile(EntryData):
@@ -74,13 +74,16 @@ class PVDPParser(MatchingParser):
         if "trans20" in file:
             entry = UnoldUVvisTransmissionMeasurementLibrary(data_file=file)
 
+        if "trpl" in file and file.endswith(".knc"):
+            entry = UnoldTRPLMeasurementLibrary(data_file=file)
+
         if "PL" in file:
             entry = UnoldPLMeasurementLibrary(data_file=file)
 
-        if file.endswith("cond.csv"):
+        if "resist" in file.lower():
             entry = UnoldConductivityMeasurementLibrary(data_file=file)
 
-        if file.endswith("spx.xlsx") or file.endswith("spx.csv"):
+        if "xrf" in file.lower():
             entry = UnoldXRFMeasurementLibrary(composition_file=file)
         if entry is None:
             return
