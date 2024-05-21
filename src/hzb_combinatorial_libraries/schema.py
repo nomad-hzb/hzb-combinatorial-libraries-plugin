@@ -161,6 +161,9 @@ class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
 
         with archive.m_context.raw_file(archive.metadata.mainfile) as f:
             path = os.path.dirname(f.name)
+            file_name = os.path.basename(f.name)
+            if not self.samples:
+                set_sample_reference(archive, self, "_".join(file_name.split("_")[0:4]).strip("#"))
 
         if self.samples and self.samples[0].lab_id:
             search_key = self.samples[0].lab_id
@@ -267,6 +270,9 @@ class UnoldUVvisReflectionMeasurementLibrary(UVvisMeasurementLibrary, EntryData)
         reference_key = "mirror"
         with archive.m_context.raw_file(archive.metadata.mainfile) as f:
             path = os.path.dirname(f.name)
+            file_name = os.path.basename(f.name)
+            if not self.samples:
+                set_sample_reference(archive, self, "_".join(file_name.split("_")[0:4]).strip("#"))
 
         if not self.reference_file:
             for file in os.listdir(path):
@@ -325,6 +331,9 @@ class UnoldTRPLMeasurementLibrary(TimeResolvedPhotoluminescenceMeasurementLibrar
     def normalize(self, archive, logger):
         with archive.m_context.raw_file(archive.metadata.mainfile) as f:
             path = os.path.dirname(f.name)
+            file_name = os.path.basename(f.name)
+            if not self.samples:
+                set_sample_reference(archive, self, "_".join(file_name.split("_")[0:4]).strip("#"))
         if self.data_file:
             import xarray as xr
             data = xr.load_dataset(os.path.join(path, self.data_file))
@@ -384,6 +393,9 @@ class UnoldUVvisTransmissionMeasurementLibrary(UVvisMeasurementLibrary, EntryDat
         reference_key = "light"
         with archive.m_context.raw_file(archive.metadata.mainfile) as f:
             path = os.path.dirname(f.name)
+            file_name = os.path.basename(f.name)
+            if not self.samples:
+                set_sample_reference(archive, self, "_".join(file_name.split("_")[0:4]).strip("#"))
 
         if not self.reference_file:
             for file in os.listdir(path):
@@ -449,6 +461,9 @@ class UnoldPLMeasurementLibrary(PLMeasurementLibrary, EntryData):
     def normalize(self, archive, logger):
         with archive.m_context.raw_file(archive.metadata.mainfile) as f:
             path = os.path.dirname(f.name)
+            file_name = os.path.basename(f.name)
+            if not self.samples:
+                set_sample_reference(archive, self, "_".join(file_name.split("_")[0:4]).strip("#"))
         if self.data_file:
             measurements = []
 
@@ -498,6 +513,9 @@ class UnoldConductivityMeasurementLibrary(ConductivityMeasurementLibrary, EntryD
 
         with archive.m_context.raw_file(archive.metadata.mainfile) as f:
             path = os.path.dirname(f.name)
+            file_name = os.path.basename(f.name)
+            if not self.samples:
+                set_sample_reference(archive, self, "_".join(file_name.split("_")[0:4]).strip("#"))
 
         if self.data_file:
             measurements = []
