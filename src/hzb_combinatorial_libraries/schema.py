@@ -602,6 +602,11 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
             normalized.
             logger (BoundLogger): A structlog logger.
         '''
+        with archive.m_context.raw_file(archive.metadata.mainfile) as f:
+            path = os.path.dirname(f.name)
+            file_name = os.path.basename(f.name)
+            if not self.samples:
+                set_sample_reference(archive, self, "_".join(file_name.split("_")[0:4]).strip("#"))
         # if self.log_file:
         #     import pandas as pd
         #     import numpy as np
