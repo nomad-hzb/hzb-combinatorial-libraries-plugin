@@ -1,0 +1,26 @@
+{
+  "data": {
+    "m_def": "hzb_combinatorial_libraries.schema.Pixel",
+    "lab_id": " 4025-12:Pixel",
+    "thickness": 2.0,
+    "components": [
+      {
+        "m_def": "nomad.datamodel.metainfo.basesections.PureSubstanceComponent",
+        "pure_substance": {
+          "m_def": "nomad.datamodel.metainfo.basesections.PubChemPureSubstanceSection",
+          "molecular_formula": "(Si)0.1(Cs)0.2(Sn)0.1(I)0.1(Br)0.5"
+        }
+      }
+    ],
+    "position": {
+      "x": 2.0,
+      "y": 1.0
+    },
+    "properties": {
+      "PLQY": 13.911463176662089,
+      "implied_voc": 68.99989305416813,
+      "FWHM": -0.13288106222182708
+    }
+  },
+  "metadata": {}
+}

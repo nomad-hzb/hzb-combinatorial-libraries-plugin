@@ -804,13 +804,14 @@ class Pixel(ContinuousCombiSample, EntryData, ArchiveSection):
 
     def normalize(self, archive, logger):
         super(ContinuousCombiSample, self).normalize(archive, logger)
-        self.lab_id = '4025-12'  # todo hard coded for now
-        if self.lab_id:
-            set_sample_reference(archive, self, self.lab_id)
 
-        if self.properties.bandgap:
+        # self.components for xrf, check htem how to do it, and add element to results.materials.elements
+        id = self.lab_id.split(':')[0].strip()
+        if self.lab_id:
+            set_sample_reference(archive, self, id)
+
+        if self.properties and self.properties.bandgap:
             bg = BandGap(value=np.float64(self.properties.bandgap) * ureg('eV'))
-            print("bg", bg)
             if not archive.results.properties:
                 archive.results.properties = Properties()
             if not archive.results.properties.electronic:
