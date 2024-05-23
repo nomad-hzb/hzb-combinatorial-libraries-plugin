@@ -569,14 +569,17 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
         links=["http://purl.obolibrary.org/obo/CHMO_0001360"],
         a_plot=[
             dict(
+                label="Impinging flux",
                 x="steps/:/sources/:/impinging_flux/:/time",
                 y="steps/:/sources/:/impinging_flux/:/value",
             ),
             dict(
+                label="Temperature",
                 x="steps/:/sources/:/vapor_source/temperature/time",
                 y="steps/:/sources/:/vapor_source/temperature/value",
             ),
             dict(
+                label="Pressure",
                 x="steps/:/environment/pressure/time",
                 y="steps/:/environment/pressure/value",
                 layout=dict(
