@@ -1,0 +1,149 @@
+
+ui:
+  unit_systems:
+    selected: 'my_units'
+    options:
+      my_units:
+        label: 'my_units'
+        units:
+          current: 
+             definition: 'mA'
+          length: 
+            definition: 'cm'  
+  apps:
+    # Configures which apps to show. Note that the app for 'entries' (which
+    # corresponds to searching all entries) has to be included at the moment.
+                #- 'data.name#baseclasses.chemical_energy.voltammetry.Voltammetry'
+                #- 'data.voltage_shift#baseclasses.chemical_energy.voltammetry.Voltammetry'
+                #- 'data.resistance#baseclasses.chemical_energy.voltammetry.Voltammetry'
+    include:
+      - 'scattertest'
+    # Configures a new app for samples
+    options:
+      scattertest:
+        # Label of the App
+        label: 'scattertest'
+        # Path used in the URL, must be unique
+        path: 'scattertest'
+        # Used to categorize apps in the explore menu
+        category: 'Experiment'
+        # Brief description used in the app menu
+        description: 'An app customized for scattertest.'
+        # Longer description that can also use markdown
+        # Controls which columns are shown in the results table
+        columns:
+          selected:
+            - 'entry_name'
+            - 'entry_create_time'
+            - 'entry_type'
+            - 'authors'
+            - 'upload_name'
+          options:
+            entry_name:
+              label: 'Name'
+              align: 'left'
+            results.material.elements:
+              label: 'Elements'
+              align: 'left'
+            results.material.chemical_formula_hill:
+              label: 'Formula'
+              align: 'left'
+            entry_type:
+              label: 'Entry type'
+              align: 'left'
+            upload_name:
+              label: 'Upload name'
+              align: 'left'
+            upload_id:
+              label: 'Upload id'
+              align: 'left'
+            upload_create_time:
+              label: 'Upload time'
+              align: 'left'
+            entry_create_time:
+              label: 'Entry time'
+              align: 'left'
+            authors:
+              label: 'Authors'
+              align: 'left'
+        # Dictionary of search filters that are always enabled for queries made within
+        # this app. This is especially important to narrow down the results to the
+        # wanted subset. Any available search filter can be targeted here.
+        filters:
+          include:
+            - '*#hzb_combinatorial_libraries.schema.Test'
+        filters_locked:
+          section_defs.definition_qualified_name: 'hzb_combinatorial_libraries.schema.Test'
+
+        # Controls the filter menus shown on the left
+        # Controls the filter menus shown on the left
+        filter_menus:
+          options:
+            material:
+              label: 'Material'
+              level: 0
+            elements:
+              label: 'Elements / Formula'
+              level: 1
+              size: 'xl'
+            eln:
+              label: 'Electronic Lab Notebook'
+              level: 0
+            custom_quantities:
+              label: 'User Defined Quantities'
+              level: 0
+              size: 'l'
+            author:
+              label: 'Author / Origin / Dataset'
+              level: 0
+              size: 'm'
+            metadata:
+              label: 'Visibility / IDs / Schema'
+              level: 0
+        dashboard:
+          widgets:
+            - type: scatterplot
+              autorange: true
+              x: 
+                title: "Brom"
+                quantity: data.data[?name == 'Brom'].fraction#hzb_combinatorial_libraries.schema.Test
+              y: 
+                title: "Lead"
+                quantity: data.data[?name == 'Lead'].fraction#hzb_combinatorial_libraries.schema.Test
+              layout:
+                xxl:
+                  minH: 3
+                  minW: 3
+                  h: 6
+                  w: 6
+                  y: 0
+                  x: 6
+                xl:
+                  minH: 3
+                  minW: 3
+                  h: 6
+                  w: 6
+                  y: 0
+                  x: 0
+                lg:
+                  minH: 3
+                  minW: 3
+                  h: 6
+                  w: 6
+                  y: 0
+                  x: 6
+                md:
+                  minH: 3
+                  minW: 3
+                  h: 6
+                  w: 6
+                  y: 0
+                  x: 6
+                sm:
+                  minH: 3
+                  minW: 3
+                  h: 6
+                  w: 6
+                  y: 0
+                  x: 6 
+ 
