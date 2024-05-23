@@ -33,28 +33,28 @@ from baseclasses import (
 from nomad.datamodel.data import EntryData
 import datetime
 
-from nomad_material_processing.vapor_deposition import (
-    ChamberEnvironment,
-    Pressure,
-    Temperature,
-)
-from nomad_material_processing.vapor_deposition.pvd import (
-    ImpingingFlux,
-    SourcePower,
-    PVDSampleParameters,
-)
+# from nomad_material_processing.vapor_deposition import (
+#     ChamberEnvironment,
+#     Pressure,
+#     Temperature,
+# )
+# from nomad_material_processing.vapor_deposition.pvd import (
+#     ImpingingFlux,
+#     SourcePower,
+#     PVDSampleParameters,
+# )
 from nomad_material_processing.vapor_deposition.pvd.thermal import (
     ThermalEvaporation,
-    ThermalEvaporationHeater,
-    ThermalEvaporationHeaterTemperature,
-    ThermalEvaporationSource,
-    ThermalEvaporationStep,
+    #     ThermalEvaporationHeater,
+    #     ThermalEvaporationHeaterTemperature,
+    #     ThermalEvaporationSource,
+    #     ThermalEvaporationStep,
 )
 
-from nomad.datamodel.metainfo.basesections import (
-    PureSubstanceComponent,
-    PubChemPureSubstanceSection
-)
+# from nomad.datamodel.metainfo.basesections import (
+#     PureSubstanceComponent,
+#     PubChemPureSubstanceSection
+# )
 
 from structlog.stdlib import (
     BoundLogger,
