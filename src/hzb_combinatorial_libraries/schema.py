@@ -169,7 +169,7 @@ class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
             for item in os.listdir(path):
                 if not os.path.isdir(os.path.join(path, item)):
                     continue
-                if not item.startswith(f"{search_key}#"):
+                if not item.startswith(f"{search_key}"):
                     continue
                 self.data_folder = item
             # find images
@@ -182,7 +182,7 @@ class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
                 images.append(item)
             self.images = images
 
-        data_folder = os.path.join(path, self.data_folder)
+        data_folder = os.path.join(path, self.data_folder if self.data_folder else '')
         if self.composition_file and self.data_folder and "Messung.spx" in os.listdir(data_folder):
             file_path = os.path.join(path, self.composition_file)
             try:
