@@ -40,7 +40,7 @@ from nomad_material_processing.combinatorial import ContinuousCombiSample
 from nomad.datamodel.data import EntryData
 import datetime
 from nomad_material_processing.combinatorial import CombinatorialSample
-from nomad_material_processing.physical_vapor_deposition import (
+# from nomad_material_processing.physical_vapor_deposition import (
     # PVDChamberEnvironment,
     # PVDMaterialEvaporationRate,
     # PVDMaterialSource,
@@ -48,7 +48,7 @@ from nomad_material_processing.physical_vapor_deposition import (
     # PVDSourcePower,
     # PVDSubstrate,
     # PVDSubstrateTemperature,
-)
+# )
 
 from nomad_material_processing.vapor_deposition import (
     ChamberEnvironment,
