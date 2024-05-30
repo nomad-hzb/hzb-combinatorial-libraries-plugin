@@ -41,13 +41,13 @@ from nomad.datamodel.data import EntryData
 import datetime
 from nomad_material_processing.combinatorial import CombinatorialSample
 # from nomad_material_processing.physical_vapor_deposition import (
-    # PVDChamberEnvironment,
-    # PVDMaterialEvaporationRate,
-    # PVDMaterialSource,
-    # PVDPressure,
-    # PVDSourcePower,
-    # PVDSubstrate,
-    # PVDSubstrateTemperature,
+# PVDChamberEnvironment,
+# PVDMaterialEvaporationRate,
+# PVDMaterialSource,
+# PVDPressure,
+# PVDSourcePower,
+# PVDSubstrate,
+# PVDSubstrateTemperature,
 # )
 
 from nomad_material_processing.vapor_deposition import (
@@ -263,10 +263,10 @@ class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
 
                 measurements.append(XRFSingleLibraryMeasurement(
                     data_file=[os.path.basename(os.path.join(self.data_folder, files[i]))],
-                    position_x=positions_array[0][0]-ar[0][0],  # positions_array[0, i],
-                    position_y=positions_array[1][0]-ar[1][0],  # positions_array[1, i],
+                    position_x=positions_array[0][0] - ar[0][0],  # positions_array[0, i],
+                    position_y=positions_array[1][0] - ar[1][0],  # positions_array[1, i],
                     layer=layers,
-                    name=f"{round(positions_array[0][0]-ar[0][0],5)},{round(positions_array[1][0]-ar[1][0],5)}")
+                    name=f"{round(positions_array[0][0] - ar[0][0], 5)},{round(positions_array[1][0] - ar[1][0], 5)}")
                 )
             self.measurements = measurements
             self.material_names = material_name
@@ -684,7 +684,8 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
             }
             try:
                 qcms_ordered = [
-                    qcms_source_number[default_source_mapping[material]] for source, material in source_materials.items()
+                    qcms_source_number[default_source_mapping[material]] for source, material in
+                    source_materials.items()
                 ]
             except KeyError:
                 raise ValueError("Film names do not match source names.")
@@ -704,7 +705,7 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
                 step = df.loc[
                     (time <= df["Process Time in seconds"])
                     & (df["Process Time in seconds"] < start_times[idx + 1])
-                ]
+                    ]
 
                 if step.loc[:, shutters].mode().any().any():
                     depositions += 1
@@ -758,9 +759,9 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
                     ),
                     heater="Resistive element",
                     distance_to_source=[
-                        np.linalg.norm(np.array((41.54e-3, 26.06e-3, 201.12e-3)))
-                    ]
-                    * 4,
+                                           np.linalg.norm(np.array((41.54e-3, 26.06e-3, 201.12e-3)))
+                                       ]
+                                       * 4,
                 )
                 environment = ChamberEnvironment(
                     pressure=Pressure(
@@ -868,7 +869,6 @@ class Pixel(ContinuousCombiSample, EntryData, ArchiveSection):
                 archive.results.properties = Properties()
             if not archive.results.properties.electronic:
                 archive.results.properties.electronic = ElectronicProperties(band_gap=[bg])
-
 
 
 m_package.__init_metainfo__()
