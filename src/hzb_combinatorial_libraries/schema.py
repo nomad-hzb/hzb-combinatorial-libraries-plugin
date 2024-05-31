@@ -859,8 +859,8 @@ class Pixel(ContinuousCombiSample, EntryData, ArchiveSection):
         super(ContinuousCombiSample, self).normalize(archive, logger)
 
         # self.components for xrf, check htem how to do it, and add element to results.materials.elements
-        id = self.lab_id.split(':')[0].strip()
         if self.lab_id:
+            id = self.lab_id.split(':')[0].strip()
             set_sample_reference(archive, self, id)
 
         if self.properties and self.properties.bandgap:
