@@ -850,7 +850,7 @@ class Pixel(ContinuousCombiSample, EntryData, ArchiveSection):
     samples = SubSection(
         section_def=CompositeSystemReference,
         description='''
-          The samples as that have undergone the process.
+          The samples refer to the library ID.
           ''',
         repeats=True,
     )
