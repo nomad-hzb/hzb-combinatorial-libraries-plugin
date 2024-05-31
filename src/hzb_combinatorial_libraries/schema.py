@@ -108,10 +108,10 @@ class UnoldLibrary(LibrarySample, EntryData):
             msg = f'{self.lab_id}#'
             img = qrcode.make(msg)
             Im = ImageDraw.Draw(img)
-            # fnt = ImageFont.truetype("Pillow/Tests/fonts/FreeSans.ttf", 30)
-
+            root_dir = os.path.dirname(os.path.abspath(__file__))
+            fnt = ImageFont.truetype(os.path.join(root_dir, "fonts/OpenSans-VariableFont_wdth,wght.ttf"), 25)
             # Add Text to an image
-            Im.text((15, 15), f"{self.lab_id}")  # , font=fnt)
+            Im.text((5, 5), f"{self.lab_id}", font=fnt)
             qr_file_name = f"{self.lab_id}.png"
             img.save(os.path.join(path, qr_file_name), dpi=(2000, 2000))
             self.qr_code = qr_file_name
