@@ -790,39 +790,50 @@ class PixelProperty(EntryData):
     )
     conductivity = Quantity(
         type=np.dtype(np.float64),
-        # unit='1/Ω',
+        unit='S/cm',
         shape=[],
         description="""
                 The conductivity of the Pixel.
                 """,
         a_eln=dict(
-            component='NumberEditQuantity')
+            component='NumberEditQuantity',
+            defaultDisplayUnit='S/cm',
+        )
     )
     bandgap = Quantity(
         type=np.dtype(np.float64),
+        unit='eV',
         description='Band gap value in eV.',
-        a_eln=dict(component='NumberEditQuantity')
+        a_eln=dict(
+            component='NumberEditQuantity',
+            defaultDisplayUnit='eV',    
+        )
     )
 
     PLQY = Quantity(
         type=np.dtype(np.float64),
-        # unit='%',
         description='Energy integrated value of the PL spectrum.',
         a_eln=dict(component='NumberEditQuantity')
     )
 
     implied_voc = Quantity(
         type=np.dtype(np.float64),
-        # unit='V',
+        unit='eV',
         description='Estimated open circuit voltage based on PL measurements.',
-        a_eln=dict(component='NumberEditQuantity')
+        a_eln=dict(
+            component='NumberEditQuantity',
+            defaultDisplayUnit='eV',
+        )
     )
 
     FWHM = Quantity(
         type=np.dtype(np.float64),
-        # unit='eV', # todo check if this is correct
+        unit='eV',
         description='FWHM based on PL measurements.',
-        a_eln=dict(component='NumberEditQuantity')
+        a_eln=dict(
+            component='NumberEditQuantity',
+            defaultDisplayUnit='eV'
+        )
     )
 
 
@@ -833,13 +844,15 @@ class Pixel(ContinuousCombiSample, EntryData, ArchiveSection):
     )
     thickness = Quantity(
         type=np.dtype(np.float64),
-        unit='nm',
+        unit='cm',
         shape=[],
         description="""
             The thickness of the pixel.
             """,
         a_eln=dict(
-            component='NumberEditQuantity')
+            component='NumberEditQuantity',
+             defaultDisplayUnit='mm',
+        )
     )
     properties = SubSection(
         section_def=PixelProperty,
