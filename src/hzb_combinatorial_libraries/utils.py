@@ -4,8 +4,8 @@ from nomad.search import search
 from nomad import files
 from nomad.datamodel import EntryArchive
 from nomad.app.v1.models.models import MetadataRequired
-# get a specific entry data
-# hzb_combinatorial_libraries.schema.UnoldPLMeasurementLibrary
+from nomad.datamodel.metainfo.basesections import CompositeSystemReference
+from baseclasses.helper.utilities import search_entry_by_id, get_reference
 
 
 def search_data(archive, sample_id, entry_type):
@@ -48,3 +48,13 @@ def get_entryid(archive, sample_id):  # give it a batch id
 
     return search_result.data[0]["entry_id"]
 
+
+def set_library_reference(archive, entry, search_id):
+    search_result = search_entry_by_id(archive, entry, search_id)
+    if len(search_result.data) == 1:
+        data = search_result.data[0]
+        upload_id, entry_id = data["upload_id"], data["entry_id"]
+        if "sample" in data["entry_type"].lower() or "library" in data["entry_type"].lower():
+            entry.library_reference = CompositeSystemReference(reference=get_reference(upload_id, entry_id))
+        if "solution" in data["entry_type"].lower() or "ink" in data["entry_type"].lower():
+            entry.library_reference = CompositeSystemReference(reference=get_reference(upload_id, entry_id))

@@ -39,6 +39,7 @@ from nomad.datamodel.results import Properties, ElectronicProperties
 from nomad_material_processing.combinatorial import ContinuousCombiSample
 from nomad.datamodel.data import EntryData
 import datetime
+from .utils import set_library_reference
 from nomad_material_processing.combinatorial import CombinatorialSample
 # from nomad_material_processing.physical_vapor_deposition import (
 # PVDChamberEnvironment,
@@ -873,7 +874,7 @@ class Pixel(ContinuousCombiSample, EntryData, ArchiveSection):
         # self.components for xrf, check htem how to do it, and add element to results.materials.elements
         if self.lab_id:
             id = self.lab_id.split(':')[0].strip()
-            set_sample_reference(archive, self, id)
+            set_library_reference(archive, self, id)
         else:
             raise ValueError("Pixel Lab ID is missing")
 
