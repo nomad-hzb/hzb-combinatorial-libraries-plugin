@@ -860,12 +860,11 @@ class Pixel(ContinuousCombiSample, EntryData, ArchiveSection):
           The properties of the pixel.
           ''',
     )
-    samples = SubSection(
+    library_reference = SubSection(
         section_def=CompositeSystemReference,
         description='''
           The samples refer to the library ID.
           ''',
-        repeats=True,
     )
 
     def normalize(self, archive, logger):
@@ -875,6 +874,8 @@ class Pixel(ContinuousCombiSample, EntryData, ArchiveSection):
         if self.lab_id:
             id = self.lab_id.split(':')[0].strip()
             set_sample_reference(archive, self, id)
+        else:
+            raise ValueError("Pixel Lab ID is missing")
 
         if self.properties and self.properties.bandgap:
             bg = BandGap(value=np.float64(self.properties.bandgap) * ureg('eV'))
