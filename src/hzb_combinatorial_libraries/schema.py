@@ -16,13 +16,16 @@
 # limitations under the License.
 #
 import os
+import numpy as np
 import pandas as pd
 
 from nomad.units import ureg
 from baseclasses.solar_energy import (
     UVvisMeasurementLibrary, UVvisDataSimple, UVvisSingleLibraryMeasurement, UVvisProperties,
-    ConductivityMeasurementLibrary, ConductivityProperties,  ConductivitySingleLibraryMeasurement, PLPropertiesLibrary, PLDataSimple, PLSingleLibraryMeasurement, PLMeasurementLibrary,
-    TimeResolvedPhotoluminescenceMeasurementLibrary, TimeResolvedPhotoluminescenceSingleLibraryMeasurement, TRPLPropertiesBasic, TRPLDataSimple
+    ConductivityMeasurementLibrary, ConductivityProperties, ConductivitySingleLibraryMeasurement, PLPropertiesLibrary,
+    PLDataSimple, PLSingleLibraryMeasurement, PLMeasurementLibrary,
+    TimeResolvedPhotoluminescenceMeasurementLibrary, TimeResolvedPhotoluminescenceSingleLibraryMeasurement,
+    TRPLPropertiesBasic, TRPLDataSimple
 )
 from baseclasses.characterizations import (
     XRFLibrary, XRFSingleLibraryMeasurement, XRFProperties, XRFComposition, XRFData, XRFLayer)
@@ -30,8 +33,23 @@ from baseclasses.helper.utilities import convert_datetime, set_sample_reference
 from baseclasses import (
     LibrarySample
 )
+from nomad.datamodel.results import BandGap
+from nomad.datamodel.data import ArchiveSection
+from nomad.datamodel.results import Properties, ElectronicProperties
+from nomad_material_processing.combinatorial import ContinuousCombiSample
 from nomad.datamodel.data import EntryData
 import datetime
+from .utils import set_library_reference
+from nomad_material_processing.combinatorial import CombinatorialSample
+# from nomad_material_processing.physical_vapor_deposition import (
+# PVDChamberEnvironment,
+# PVDMaterialEvaporationRate,
+# PVDMaterialSource,
+# PVDPressure,
+# PVDSourcePower,
+# PVDSubstrate,
+# PVDSubstrateTemperature,
+# )
 
 from nomad_material_processing.vapor_deposition import (
     ChamberEnvironment,
@@ -62,9 +80,13 @@ from structlog.stdlib import (
 from nomad.metainfo import (
     Package,
     Section,
-    Quantity
+    SubSection,
+    Quantity,
 )
 
+from nomad.datamodel.metainfo.basesections import CompositeSystemReference
+
+from nomad.datamodel.metainfo.annotations import ELNComponentEnum
 from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation,
     BrowserAnnotation,
@@ -76,6 +98,8 @@ from nomad.metainfo.metainfo import (
 from nomad.datamodel.data import (
     EntryDataCategory,
 )
+
+from .utils import search_data
 
 m_package = Package(name='hzb_combinatorial_libraries')
 
@@ -116,6 +140,9 @@ class UnoldLibrary(LibrarySample, EntryData):
             img.save(os.path.join(path, qr_file_name), dpi=(2000, 2000))
             self.qr_code = qr_file_name
 
+            # todo search library related data and create pixel
+            # data = search_data(archive, self.lab_id, "UnoldPLMeasurementLibrary")
+
 
 def load_XRF_txt(file):
     with open(file) as input_file:
@@ -131,9 +158,9 @@ def load_XRF_txt(file):
     pos.append(-1)
     col = []
     c_old = ''
-    for i in range(len(pos)-1):
-        c1 = head[0][pos[i]:pos[i+1]].strip() if head[0][pos[i]:pos[i+1]].strip() else c_old
-        c2 = head[1][pos[i]:pos[i+1]].strip()
+    for i in range(len(pos) - 1):
+        c1 = head[0][pos[i]:pos[i + 1]].strip() if head[0][pos[i]:pos[i + 1]].strip() else c_old
+        c2 = head[1][pos[i]:pos[i + 1]].strip()
         col.append((c1, c2))
         c_old = c1
     if "," in head[2]:
@@ -150,9 +177,9 @@ class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
         categories=[UnoldLabCategory],
         a_eln=dict(hide=['instruments', 'steps', 'results', 'lab_id'],
                    properties=dict(
-            order=[
-                "name",
-            ]))
+                       order=[
+                           "name",
+                       ]))
     )
 
     def normalize(self, archive, logger):
@@ -237,10 +264,10 @@ class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
 
                 measurements.append(XRFSingleLibraryMeasurement(
                     data_file=[os.path.basename(os.path.join(self.data_folder, files[i]))],
-                    position_x=positions_array[0][0]-ar[0][0],  # positions_array[0, i],
-                    position_y=positions_array[1][0]-ar[1][0],  # positions_array[1, i],
+                    position_x=positions_array[0][0] - ar[0][0],  # positions_array[0, i],
+                    position_y=positions_array[1][0] - ar[1][0],  # positions_array[1, i],
                     layer=layers,
-                    name=f"{round(positions_array[0][0]-ar[0][0],5)},{round(positions_array[1][0]-ar[1][0],5)}")
+                    name=f"{round(positions_array[0][0] - ar[0][0], 5)},{round(positions_array[1][0] - ar[1][0], 5)}")
                 )
             self.measurements = measurements
             self.material_names = material_name
@@ -253,17 +280,17 @@ class UnoldUVvisReflectionMeasurementLibrary(UVvisMeasurementLibrary, EntryData)
         categories=[UnoldLabCategory],
         a_eln=dict(hide=['instruments', 'steps', 'results', 'lab_id'],
                    properties=dict(
-            order=[
-                "name",
-            ])),
+                       order=[
+                           "name",
+                       ])),
         a_plot=[
             {
                 'x': 'wavelength', 'y': 'measurements/:/data/intensity', 'layout': {
-                    'yaxis': {
-                        "range": [0, 1],
-                        "fixedrange": False}, 'xaxis': {
-                        "fixedrange": False}}, "config": {
-                            "scrollZoom": True, 'staticPlot': False, }}]
+                'yaxis': {
+                    "range": [0, 1],
+                    "fixedrange": False}, 'xaxis': {
+                    "fixedrange": False}}, "config": {
+                "scrollZoom": True, 'staticPlot': False, }}]
     )
 
     def normalize(self, archive, logger):
@@ -302,9 +329,9 @@ class UnoldUVvisReflectionMeasurementLibrary(UVvisMeasurementLibrary, EntryData)
                 set_sample_reference(archive, self, md["Sample_ID"].strip("#"))
             if self.properties is None:
                 self.properties = UVvisProperties(integration_time=md['integration time'].split(" ")[0].strip()
-                                                  * ureg(md['integration time'].split(" ")[1].strip()),
+                                                                   * ureg(md['integration time'].split(" ")[1].strip()),
                                                   spot_size=md['spot size'].split(" ")[0].strip()
-                                                  * ureg(md['spot size'].split(" ")[1].strip()))
+                                                            * ureg(md['spot size'].split(" ")[1].strip()))
             self.wavelength = df.columns[4:]
             for i, row in df.iterrows():
                 data = UVvisDataSimple(intensity=row[df.columns[4:]])
@@ -326,9 +353,9 @@ class UnoldTRPLMeasurementLibrary(TimeResolvedPhotoluminescenceMeasurementLibrar
         categories=[UnoldLabCategory],
         a_eln=dict(hide=['instruments', 'steps', 'results', 'lab_id'],
                    properties=dict(
-            order=[
-                "name",
-            ]))
+                       order=[
+                           "name",
+                       ]))
     )
 
     def normalize(self, archive, logger):
@@ -342,11 +369,11 @@ class UnoldTRPLMeasurementLibrary(TimeResolvedPhotoluminescenceMeasurementLibrar
             data = xr.load_dataset(os.path.join(path, self.data_file))
             # self.time = data.trpl_t.values * ureg(data.trpl_t.units)
             self.properties = TRPLPropertiesBasic(
-                repetition_rate=data.trpl_repetition_rate.values*ureg(data.trpl_repetition_rate.units),
-                laser_power=data.trpl_power.values*ureg(data.trpl_power.units),
+                repetition_rate=data.trpl_repetition_rate.values * ureg(data.trpl_repetition_rate.units),
+                laser_power=data.trpl_power.values * ureg(data.trpl_power.units),
                 excitation_peak_wavelength=data.trpl_excitation_wavelength.values *
-                ureg(data.trpl_excitation_wavelength.units),
-                detection_wavelength=data.trpl_detection_wavelength.values*ureg(data.trpl_detection_wavelength.units),
+                                           ureg(data.trpl_excitation_wavelength.units),
+                detection_wavelength=data.trpl_detection_wavelength.values * ureg(data.trpl_detection_wavelength.units),
                 spotsize=data.trpl_counts.spot_size_um2 * ureg("um**2"),
                 excitation_attenuation_filter=data.trpl_counts.attenuation,
                 integration_time=data.trpl_counts.integration_time_s * ureg("s")
@@ -377,16 +404,16 @@ class UnoldUVvisTransmissionMeasurementLibrary(UVvisMeasurementLibrary, EntryDat
         categories=[UnoldLabCategory],
         a_eln=dict(hide=['instruments', 'steps', 'results', 'lab_id'],
                    properties=dict(
-            order=[
-                "name",
-            ])),
+                       order=[
+                           "name",
+                       ])),
         a_plot=[
             {
                 'x': 'wavelength', 'y': 'measurements/:/data/intensity', 'layout': {
-                    'yaxis': {
-                        "fixedrange": False}, 'xaxis': {
-                        "fixedrange": False}}, "config": {
-                            "scrollZoom": True, 'staticPlot': False, }}]
+                'yaxis': {
+                    "fixedrange": False}, 'xaxis': {
+                    "fixedrange": False}}, "config": {
+                "scrollZoom": True, 'staticPlot': False, }}]
     )
 
     def normalize(self, archive, logger):
@@ -424,9 +451,9 @@ class UnoldUVvisTransmissionMeasurementLibrary(UVvisMeasurementLibrary, EntryDat
                 set_sample_reference(archive, self, md["Sample_ID"].strip("#"))
             if self.properties is None:
                 self.properties = UVvisProperties(integration_time=md['integration time'].split(" ")[0].strip()
-                                                  * ureg(md['integration time'].split(" ")[1].strip()),
+                                                                   * ureg(md['integration time'].split(" ")[1].strip()),
                                                   spot_size=md['spot size'].split(" ")[0].strip()
-                                                  * ureg(md['spot size'].split(" ")[1].strip()))
+                                                            * ureg(md['spot size'].split(" ")[1].strip()))
             self.wavelength = df.columns[4:]
             for i, row in df.iterrows():
                 data = UVvisDataSimple(intensity=row[df.columns[4:]])
@@ -449,16 +476,16 @@ class UnoldPLMeasurementLibrary(PLMeasurementLibrary, EntryData):
         categories=[UnoldLabCategory],
         a_eln=dict(hide=['instruments', 'steps', 'results', 'lab_id'],
                    properties=dict(
-            order=[
-                "name",
-            ])),
+                       order=[
+                           "name",
+                       ])),
         a_plot=[
             {
                 'x': 'wavelength', 'y': 'measurements/:/data/intensity', 'layout': {
-                    'yaxis': {
-                        "fixedrange": False}, 'xaxis': {
-                        "fixedrange": False}}, "config": {
-                            "scrollZoom": True, 'staticPlot': False, }}]
+                'yaxis': {
+                    "fixedrange": False}, 'xaxis': {
+                    "fixedrange": False}}, "config": {
+                "scrollZoom": True, 'staticPlot': False, }}]
     )
 
     def normalize(self, archive, logger):
@@ -477,13 +504,16 @@ class UnoldPLMeasurementLibrary(PLMeasurementLibrary, EntryData):
                 set_sample_reference(archive, self, md["Sample_ID"].strip("#"))
             if self.properties is None:
                 self.properties = PLPropertiesLibrary(integration_time=md['integration time'].split(" ")[0].strip()
-                                                      * ureg(md['integration time'].split(" ")[1].strip()),
+                                                                       * ureg(
+                    md['integration time'].split(" ")[1].strip()),
                                                       spot_size=md['spot size'].split(" ")[0].strip(),
                                                       # * ureg(md['spot size'].split(" ")[1].strip()),
                                                       long_pass_filter=md['long pass filter'].split(" ")[0].strip()
-                                                      * ureg(md['long pass filter'].split(" ")[1].strip()),
+                                                                       * ureg(
+                                                          md['long pass filter'].split(" ")[1].strip()),
                                                       laser_wavelength=md['laser wavelength'].split(" ")[0].strip()
-                                                      * ureg(md['laser wavelength'].split(" ")[1].strip()))
+                                                                       * ureg(
+                                                          md['laser wavelength'].split(" ")[1].strip()))
             self.wavelength = df.columns[6:]
             for i, row in df.iterrows():
                 data = PLDataSimple(intensity=row[df.columns[6:]])
@@ -507,9 +537,9 @@ class UnoldConductivityMeasurementLibrary(ConductivityMeasurementLibrary, EntryD
         categories=[UnoldLabCategory],
         a_eln=dict(hide=['instruments', 'steps', 'results', 'lab_id'],
                    properties=dict(
-            order=[
-                "name",
-            ])),
+                       order=[
+                           "name",
+                       ])),
     )
 
     def normalize(self, archive, logger):
@@ -531,17 +561,18 @@ class UnoldConductivityMeasurementLibrary(ConductivityMeasurementLibrary, EntryD
             if self.properties is None:
                 print(float(md['integration_time'].split(" ")[0].strip()), md['integration_time'].split(" ")[1].strip())
                 print(float(md['Configuration'].split(" ")[0].strip()), md['Configuration'].split(" ")[1].strip())
-                self.properties = ConductivityProperties(integration_time=float(md['integration_time'].split(" ")[0].strip())
-                                                         * ureg(md['integration_time'].split(" ")[1].strip()),
-                                                         configuration=float(md['Configuration'].split(" ")[0].strip())
-                                                         * ureg(md['Configuration'].split(" ")[1].strip()))
+                self.properties = ConductivityProperties(
+                    integration_time=float(md['integration_time'].split(" ")[0].strip())
+                                     * ureg(md['integration_time'].split(" ")[1].strip()),
+                    configuration=float(md['Configuration'].split(" ")[0].strip())
+                                  * ureg(md['Configuration'].split(" ")[1].strip()))
 
             for i, row in df.iterrows():
                 measurements.append(ConductivitySingleLibraryMeasurement(
                     position_x=row["x"],
                     position_y=row["y"],
                     position_z=row["z"],
-                    conductivity=row["resistance"]*ureg("Gohm"),
+                    conductivity=row["resistance"] * ureg("Gohm"),
                     name=f"{row['x']},{row['y']},{row['z']}"),
                 )
             self.measurements = measurements
@@ -654,7 +685,8 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
             }
             try:
                 qcms_ordered = [
-                    qcms_source_number[default_source_mapping[material]] for source, material in source_materials.items()
+                    qcms_source_number[default_source_mapping[material]] for source, material in
+                    source_materials.items()
                 ]
             except KeyError:
                 raise ValueError("Film names do not match source names.")
@@ -674,7 +706,7 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
                 step = df.loc[
                     (time <= df["Process Time in seconds"])
                     & (df["Process Time in seconds"] < start_times[idx + 1])
-                ]
+                    ]
 
                 if step.loc[:, shutters].mode().any().any():
                     depositions += 1
@@ -728,9 +760,9 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
                     ),
                     heater="Resistive element",
                     distance_to_source=[
-                        np.linalg.norm(np.array((41.54e-3, 26.06e-3, 201.12e-3)))
-                    ]
-                    * 4,
+                                           np.linalg.norm(np.array((41.54e-3, 26.06e-3, 201.12e-3)))
+                                       ]
+                                       * 4,
                 )
                 environment = ChamberEnvironment(
                     pressure=Pressure(
@@ -750,6 +782,108 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
             self.steps = steps
 
         super(UnoldThermalEvaporation, self).normalize(archive, logger)
+
+
+class PixelProperty(EntryData):
+    m_def = Section(
+        categories=[UnoldLabCategory],
+        label='UnoldPixelProperty'
+    )
+    thickness = Quantity(
+        type=np.dtype(np.float64),
+        unit='cm',
+        shape=[],
+        description="""
+            The thickness of the pixel.
+            """,
+        a_eln=dict(
+            component='NumberEditQuantity',
+            defaultDisplayUnit='mm',
+        )
+    )
+    conductivity = Quantity(
+        type=np.dtype(np.float64),
+        unit='S/cm',
+        shape=[],
+        description="""
+                The conductivity of the Pixel.
+                """,
+        a_eln=dict(
+            component='NumberEditQuantity',
+            defaultDisplayUnit='S/cm',
+        )
+    )
+    bandgap = Quantity(
+        type=np.dtype(np.float64),
+        unit='eV',
+        description='Band gap value in eV.',
+        a_eln=dict(
+            component='NumberEditQuantity',
+            defaultDisplayUnit='eV',    
+        )
+    )
+
+    PLQY = Quantity(
+        type=np.dtype(np.float64),
+        description='Energy integrated value of the PL spectrum.',
+        a_eln=dict(component='NumberEditQuantity')
+    )
+
+    implied_voc = Quantity(
+        type=np.dtype(np.float64),
+        unit='eV',
+        description='Estimated open circuit voltage based on PL measurements.',
+        a_eln=dict(
+            component='NumberEditQuantity',
+            defaultDisplayUnit='eV',
+        )
+    )
+
+    FWHM = Quantity(
+        type=np.dtype(np.float64),
+        unit='eV',
+        description='FWHM based on PL measurements.',
+        a_eln=dict(
+            component='NumberEditQuantity',
+            defaultDisplayUnit='eV'
+        )
+    )
+
+
+class Pixel(ContinuousCombiSample, EntryData, ArchiveSection):
+    m_def = Section(
+        categories=[UnoldLabCategory],
+        label='UnoldPixel'
+    )
+    properties = SubSection(
+        section_def=PixelProperty,
+        description='''
+          The properties of the pixel.
+          ''',
+    )
+    library_reference = SubSection(
+        section_def=CompositeSystemReference,
+        description='''
+          The samples refer to the library ID.
+          ''',
+    )
+
+    def normalize(self, archive, logger):
+        super(ContinuousCombiSample, self).normalize(archive, logger)
+
+        # self.components for xrf, check htem how to do it, and add element to results.materials.elements
+        if self.lab_id:
+            id = self.lab_id.split(':')[0].strip()
+            set_library_reference(archive, self, id)
+        else:
+            raise ValueError("Pixel Lab ID is missing")
+
+        if self.properties and self.properties.bandgap:
+            bg = BandGap(value=np.float64(self.properties.bandgap) * ureg('eV'))
+            if not archive.results.properties:
+                archive.results.properties = Properties()
+            if not archive.results.properties.electronic:
+                archive.results.properties.electronic = ElectronicProperties(band_gap=[bg])
 
 
 m_package.__init_metainfo__()
