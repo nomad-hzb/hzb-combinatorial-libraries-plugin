@@ -788,6 +788,18 @@ class PixelProperty(EntryData):
         categories=[UnoldLabCategory],
         label='UnoldPixelProperty'
     )
+    thickness = Quantity(
+        type=np.dtype(np.float64),
+        unit='cm',
+        shape=[],
+        description="""
+            The thickness of the pixel.
+            """,
+        a_eln=dict(
+            component='NumberEditQuantity',
+            defaultDisplayUnit='mm',
+        )
+    )
     conductivity = Quantity(
         type=np.dtype(np.float64),
         unit='S/cm',
@@ -841,18 +853,6 @@ class Pixel(ContinuousCombiSample, EntryData, ArchiveSection):
     m_def = Section(
         categories=[UnoldLabCategory],
         label='UnoldPixel'
-    )
-    thickness = Quantity(
-        type=np.dtype(np.float64),
-        unit='cm',
-        shape=[],
-        description="""
-            The thickness of the pixel.
-            """,
-        a_eln=dict(
-            component='NumberEditQuantity',
-             defaultDisplayUnit='mm',
-        )
     )
     properties = SubSection(
         section_def=PixelProperty,
