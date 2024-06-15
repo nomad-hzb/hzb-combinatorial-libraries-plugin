@@ -38,8 +38,8 @@ from nomad.datamodel.metainfo.basesections import (
 
 from nomad_material_processing.utils import create_archive
 from baseclasses.helper.utilities import set_sample_reference
-from hzb_combinatorial_libraries.schema import (UnoldThermalEvaporation, UnoldXRFMeasurementLibrary, UnoldUVvisReflectionMeasurementLibrary,
-                                                UnoldUVvisTransmissionMeasurementLibrary, UnoldPLMeasurementLibrary, UnoldConductivityMeasurementLibrary, UnoldTRPLMeasurementLibrary)
+from hzb_combinatorial_libraries.schema_packages.hzb_library_package import (UnoldThermalEvaporation, UnoldXRFMeasurementLibrary, UnoldUVvisReflectionMeasurementLibrary,
+                                                                             UnoldUVvisTransmissionMeasurementLibrary, UnoldPLMeasurementLibrary, UnoldConductivityMeasurementLibrary, UnoldTRPLMeasurementLibrary)
 
 
 class ParsedFile(EntryData):
@@ -52,14 +52,6 @@ class ParsedFile(EntryData):
 
 
 class PVDPParser(MatchingParser):
-
-    def __init__(self):
-        super().__init__(
-            name='parsers/hzb_combinatorial_libraries',
-            code_name='HZB Unold Lab Parser',
-            code_homepage='https://github.com/FAIRmat-NFDI/AreaA-data_modeling_and_schemas',
-            supported_compressions=['gz', 'bz2', 'xz']
-        )
 
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
         entry = None

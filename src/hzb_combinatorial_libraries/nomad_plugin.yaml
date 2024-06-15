@@ -1,8 +1,0 @@
-description: This is a plugin schema generated from a yaml schema.
-name: parsers/hzb_combinatorial_libraries
-plugin_type: parser
-mainfile_name_re: ^.*(pvd.*|PVD.*|PL.*|refl20.*|trans20.*|(R|r)esist.*)\.(t|c)sv|.*(xrf.*\.(txt|xlsx))|.*(trpl.*\.knc)$
-mainfile_mime_re: '(application|text)/.*'
-parser_class_name: hzb_combinatorial_libraries.PVDPParser
-code_name: HZB Unold Lab Parser
-

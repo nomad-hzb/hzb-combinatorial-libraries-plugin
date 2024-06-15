@@ -1,0 +1,3 @@
+[nomad.plugin]
+hzb_library_package = hzb_combinatorial_libraries.schema_packages:hzb_library_package
+hzb_library_parser = hzb_combinatorial_libraries.parsers:hzb_library_parser

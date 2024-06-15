@@ -62,7 +62,8 @@ from structlog.stdlib import (
 from nomad.metainfo import (
     Package,
     Section,
-    Quantity
+    Quantity,
+    SchemaPackage
 )
 
 from nomad.datamodel.metainfo.annotations import (
@@ -77,7 +78,7 @@ from nomad.datamodel.data import (
     EntryDataCategory,
 )
 
-m_package = Package(name='hzb_combinatorial_libraries')
+m_package = SchemaPackage()
 
 
 class UnoldLabCategory(EntryDataCategory):
@@ -192,7 +193,7 @@ class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
                 file_path = os.path.join(path, self.data_folder, self.composition_file)
             measurements = []
 
-            from baseclasses.helper.file_parser.xrf_spx_parser import read as xrf_read
+            from hzb_combinatorial_libraries.schema_packages.file_parser.xrf_spx_parser import read as xrf_read
             files = [os.path.join(data_folder, file) for file in os.listdir(data_folder)
                      if file.endswith(".spx") and not file.lower() == "messung.spx"]
             files.sort()
@@ -292,7 +293,7 @@ class UnoldUVvisReflectionMeasurementLibrary(UVvisMeasurementLibrary, EntryData)
         if self.data_file and self.reference_file and self.dark_file:
             measurements = []
 
-            from baseclasses.helper.file_parser.uvvis_parser import read_uvvis
+            from hzb_combinatorial_libraries.schema_packages.file_parser.uvvis_parser import read_uvvis
             md, df = read_uvvis(os.path.join(path, self.data_file),
                                 os.path.join(path, self.reference_file),
                                 os.path.join(path, self.dark_file))
@@ -415,7 +416,7 @@ class UnoldUVvisTransmissionMeasurementLibrary(UVvisMeasurementLibrary, EntryDat
         if self.data_file and self.reference_file and self.dark_file:
             measurements = []
 
-            from baseclasses.helper.file_parser.uvvis_parser import read_uvvis
+            from hzb_combinatorial_libraries.schema_packages.file_parser.uvvis_parser import read_uvvis
             md, df = read_uvvis(os.path.join(path, self.data_file),
                                 os.path.join(path, self.reference_file),
                                 os.path.join(path, self.dark_file))
@@ -470,7 +471,7 @@ class UnoldPLMeasurementLibrary(PLMeasurementLibrary, EntryData):
         if self.data_file:
             measurements = []
 
-            from baseclasses.helper.file_parser.pl_parser import read_file_pl_unold
+            from hzb_combinatorial_libraries.schema_packages.file_parser.pl_parser import read_file_pl_unold
             md, df = read_file_pl_unold(os.path.join(path, self.data_file))
             self.datetime = convert_datetime(md["Date_Time"], datetime_format="%Y_%m_%d_%H%M", utc=False)
             if not self.samples:
@@ -523,7 +524,7 @@ class UnoldConductivityMeasurementLibrary(ConductivityMeasurementLibrary, EntryD
         if self.data_file:
             measurements = []
 
-            from baseclasses.helper.file_parser.conductivity_parser import read_conductivity
+            from hzb_combinatorial_libraries.schema_packages.file_parser.conductivity_parser import read_conductivity
             md, df = read_conductivity(os.path.join(path, self.data_file))
             self.datetime = convert_datetime(md["Date_Time"], datetime_format="%Y_%m_%d_%H%M", utc=False)
             if not self.samples:
