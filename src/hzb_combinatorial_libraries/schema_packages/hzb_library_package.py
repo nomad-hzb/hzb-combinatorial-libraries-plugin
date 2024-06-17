@@ -98,8 +98,31 @@ from nomad.metainfo.metainfo import (
 from nomad.datamodel.data import (
     EntryDataCategory,
 )
+from nomad.search import search
 
 m_package = SchemaPackage()
+
+
+def get_entryid(url, token, sample_id):  # give it a batch id
+    # get al entries related to this batch id
+    query = {
+        'required': {
+            'metadata': '*'
+        },
+        'owner': 'visible',
+        'query': {'results.eln.lab_ids': sample_id},
+        'pagination': {
+            'page_size': 100
+        }
+    }
+    response = requests.post(
+        f'{url}/entries/query', headers={'Authorization': f'Bearer {token}'}, json=query)
+    data = response.json()["data"]
+    assert len(data) == 1
+    return data[0]["entry_id"]
+
+
+
 
 
 class UnoldLabCategory(EntryDataCategory):
@@ -116,6 +139,12 @@ class UnoldLibrary(LibrarySample, EntryData):
         type=str,
         a_eln=dict(component='FileEditQuantity'),
         a_browser=dict(adaptor='RawFileAdaptor'))
+
+    # generate_pixel = Quantity(
+    #     type=bool,
+    #     default=False,
+    #     a_eln=dict(component='ButtonEditQuantity')
+    # )
 
     def normalize(self, archive, logger):
         super(UnoldLibrary,
@@ -138,8 +167,30 @@ class UnoldLibrary(LibrarySample, EntryData):
             img.save(os.path.join(path, qr_file_name), dpi=(2000, 2000))
             self.qr_code = qr_file_name
 
-            # todo search library related data and create pixel
-            # data = search_data(archive, self.lab_id, "UnoldPLMeasurementLibrary")
+        if self.lab_id:
+        #    query = {
+        #     'required': {
+        #         'metadata': '*',
+        #         'data': '*',
+        #     },
+        #     'owner': 'visible',
+        #     'query': {'entry_references.target_entry_id': entry_id},
+        #     'pagination': {
+        #         'page_size': 100
+        #     }
+        # }
+
+            search_result = search(
+                owner="all",
+                query={
+                    "upload_id:any": [archive.m_context.upload_id],
+                    "results.eln.lab_ids:any": [self.lab_id],
+                },
+                user_id=archive.metadata.main_author.user_id,
+            )
+            print("search!!!", search_result)
+            print("search_result.data", len(search_result.data), search_result.data)
+            print("---------------------------------", search_result.data[0], "-------------------")
 
 
 def load_XRF_txt(file):
