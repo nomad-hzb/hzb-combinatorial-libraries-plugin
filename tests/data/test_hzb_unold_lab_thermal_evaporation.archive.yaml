@@ -1,3 +1,3 @@
 data:
-  m_def: hzb_combinatorial_libraries.HZBUnoldLabThermalEvaporation
+  m_def: hzb_combinatorial_libraries.schema_packages.hzb_library_package.UnoldThermalEvaporation
   log_file: hzb-unold-lab_pvdp-2135.tsv
