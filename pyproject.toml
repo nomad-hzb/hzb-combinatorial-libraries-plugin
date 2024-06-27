@@ -34,7 +34,6 @@ dependencies = [
     "nomad-baseclasses @ git+https://github.com/nomad-hzb/nomad-baseclasses.git@main",
     "chardet>=5.2.0"
 ]
-]
 [project.urls]
 Repository = "https://github.com/nomad-hzb/hzb-combinatorial-libraries-plugin"
 
