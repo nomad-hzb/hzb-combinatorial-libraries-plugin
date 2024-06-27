@@ -36,10 +36,14 @@ from baseclasses import (
 from nomad.datamodel.results import BandGap
 from nomad.datamodel.data import ArchiveSection
 from nomad.datamodel.results import Properties, ElectronicProperties
-from nomad_material_processing.combinatorial import ContinuousCombiSample
+from nomad_material_processing.combinatorial import ContinuousCombiSample, CombinatorialSamplePosition
 from nomad.datamodel.data import EntryData
 import datetime
 from hzb_combinatorial_libraries.schema_packages.utils import set_library_reference
+from hzb_combinatorial_libraries.schema_packages.pixel_processing.pl_processing import pl_data_processing
+from hzb_combinatorial_libraries.schema_packages.pixel_processing.conductivity_processing import conductivity_data_processing
+from hzb_combinatorial_libraries.schema_packages.pixel_processing.bilinear_interpolation import bilinear_interpolation
+from hzb_combinatorial_libraries.schema_packages.pixel_processing.xrf_processing import xrf_data_processing
 from nomad_material_processing.combinatorial import CombinatorialSample
 # from nomad_material_processing.physical_vapor_deposition import (
 # PVDChamberEnvironment,
@@ -84,7 +88,10 @@ from nomad.metainfo import (
     SchemaPackage
 )
 
-from nomad.datamodel.metainfo.basesections import CompositeSystemReference
+from nomad.datamodel.metainfo.basesections import (
+    CompositeSystemReference,
+    ElementalComposition,
+)
 
 from nomad.datamodel.metainfo.annotations import ELNComponentEnum
 from nomad.datamodel.metainfo.annotations import (
@@ -98,6 +105,13 @@ from nomad.metainfo.metainfo import (
 from nomad.datamodel.data import (
     EntryDataCategory,
 )
+from nomad.search import search
+from .utils import (
+    create_archive,
+)
+from nomad import files
+from baseclasses.wet_chemical_deposition.wet_chemical_deposition import rewrite_json_recursively
+
 
 m_package = SchemaPackage()
 
@@ -116,6 +130,12 @@ class UnoldLibrary(LibrarySample, EntryData):
         type=str,
         a_eln=dict(component='FileEditQuantity'),
         a_browser=dict(adaptor='RawFileAdaptor'))
+
+    generate_pixel = Quantity(
+        type=bool,
+        default=False,
+        a_eln=dict(component='ButtonEditQuantity')
+    )
 
     def normalize(self, archive, logger):
         super(UnoldLibrary,
@@ -138,8 +158,112 @@ class UnoldLibrary(LibrarySample, EntryData):
             img.save(os.path.join(path, qr_file_name), dpi=(2000, 2000))
             self.qr_code = qr_file_name
 
-            # todo search library related data and create pixel
-            # data = search_data(archive, self.lab_id, "UnoldPLMeasurementLibrary")
+        if not self.generate_pixel:
+            return
+
+        # reset back the generate pixel to False
+        # note that reprocessing will not regenerate the pixels, need to set generate_pixel to True manually
+        rewrite_json_recursively(archive, "generate_pixel", False)
+        self.generate_pixel = False
+
+        entry_id = archive.metadata.entry_id
+
+        search_result = search(
+            owner="all",
+            query={'entry_references.target_entry_id': entry_id},
+            user_id=archive.metadata.main_author.user_id,
+        )
+
+        # get data
+        pl_data = None
+        conductivity_data = None
+        xrf_data = None
+        for res in search_result.data:
+            with files.UploadFiles.get(upload_id=res["upload_id"]).read_archive(entry_id=res["entry_id"]) as archive_dict:
+                entry_id = res["entry_id"]
+                entry_data = archive_dict[entry_id]["data"]
+
+                if entry_data["m_def"] == "hzb_combinatorial_libraries.schema_packages.hzb_library_package.UnoldPLMeasurementLibrary":
+                    pl_data = entry_data
+                elif entry_data["m_def"] == "hzb_combinatorial_libraries.schema_packages.hzb_library_package.UnoldConductivityMeasurementLibrary":
+                    conductivity_data = entry_data
+                elif entry_data["m_def"] == "hzb_combinatorial_libraries.schema_packages.hzb_library_package.UnoldXRFMeasurementLibrary":
+                    xrf_data = entry_data
+
+        # get processed data
+        pl_df = None
+        conductivity_df = None
+        xrf_df = None
+
+        if pl_data:
+            pl_df = pl_data_processing(pl_data)
+        if conductivity_data:
+            conductivity_df = conductivity_data_processing(conductivity_data)
+        if xrf_data:
+            xrf_df = xrf_data_processing(xrf_data)
+
+        # use xrf data (x,y) as the position for the generated pixel, if no xrf data, not generating pixels
+        pixels = []
+        if xrf_data:
+            x = np.array(xrf_df["position_x"])
+            y = np.array(xrf_df["position_y"])[::-1]
+            x_quantity = ureg.Quantity(x, 'millimeter').to('meter').magnitude
+            y_quantity = ureg.Quantity(y, 'millimeter').to('meter').magnitude
+
+            # create pixels
+            # for i in range(0, len(x)):
+            for i in range(0, 20):
+                p = Pixel()
+                p.properties = PixelProperty()
+                p.properties.thickness = xrf_df["thickness"][i]
+
+                for j, amt in enumerate(xrf_df["amount"][i]):
+                    elemental_composition = ElementalComposition(
+                        element=xrf_df["elements"][i][j+1],
+                        mass_fraction=amt,
+                    )
+
+                    p.elemental_composition.append(elemental_composition)
+
+                p.position = CombinatorialSamplePosition(x=x_quantity[i], y=y_quantity[i])
+                p.lab_id = f"{self.lab_id}:Pixel-{i}"
+
+                pixels.append(p)
+
+        if pl_data:
+            x_pl = np.array(pl_df["position_x"])
+            y_pl = np.array(pl_df["position_y"])[::-1]
+            x_quantity_pl = ureg.Quantity(x_pl, 'millimeter').to('meter').magnitude # defaultDisplayUnit mm, but the unit for x and y is meter
+            y_quantity_pl = ureg.Quantity(y_pl, 'millimeter').to('meter').magnitude
+
+            voc = np.array(pl_df["voc"])
+            plqy = np.array(pl_df["integral_pl"])/100
+            fwhm = np.array(pl_df["FWHM"])
+
+            for pixel in pixels:
+                voc_i = bilinear_interpolation(x_quantity_pl, y_quantity_pl, voc, pixel.position.x.magnitude, pixel.position.y.magnitude)
+                plqy_i = bilinear_interpolation(x_quantity_pl, y_quantity_pl, plqy, pixel.position.x.magnitude, pixel.position.y.magnitude)
+                fwhm_i = bilinear_interpolation(x_quantity_pl, y_quantity_pl, fwhm, pixel.position.x.magnitude, pixel.position.y.magnitude)
+
+                print(f"voc: {voc_i}, plqy: {plqy_i}, fwhm: {fwhm_i}")
+                pixel.properties.implied_voc = voc_i
+                pixel.properties.PLQY = plqy_i
+                pixel.properties.FWHM = fwhm_i
+
+        if conductivity_data:
+            x_conductivity = np.array(conductivity_df["position_x"])
+            y_conductivity = np.array(conductivity_df['position_y'])[::-1]
+            conductivity = np.array(conductivity_df["conductivity"])
+
+            for pixel in pixels:
+                con = bilinear_interpolation(x_conductivity, y_conductivity, conductivity, pixel.position.x.magnitude, pixel.position.y.magnitude)
+                pixel.properties.conductivity = con
+
+        for pixel in pixels:
+            create_archive(pixel, archive, f'{str(pixel.lab_id)}.archive.json')
+
+
+
 
 
 def load_XRF_txt(file):
@@ -872,6 +996,8 @@ class Pixel(ContinuousCombiSample, EntryData, ArchiveSection):
         # self.components for xrf, check htem how to do it, and add element to results.materials.elements
         if self.lab_id:
             id = self.lab_id.split(':')[0].strip()
+            self.name = self.lab_id
+
             set_library_reference(archive, self, id)
         else:
             raise ValueError("Pixel Lab ID is missing")
