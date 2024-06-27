@@ -141,9 +141,6 @@ class UnoldLibrary(LibrarySample, EntryData):
         super(UnoldLibrary,
               self).normalize(archive, logger)
 
-
-        print("generate pixel 1=====", self.generate_pixel)
-
         with archive.m_context.raw_file(archive.metadata.mainfile) as f:
             path = os.path.dirname(f.name)
 
@@ -161,7 +158,6 @@ class UnoldLibrary(LibrarySample, EntryData):
             img.save(os.path.join(path, qr_file_name), dpi=(2000, 2000))
             self.qr_code = qr_file_name
 
-        print("generete pixel======", self.generate_pixel)
         if not self.generate_pixel:
             return
 
@@ -185,8 +181,8 @@ class UnoldLibrary(LibrarySample, EntryData):
         for res in search_result.data:
             with files.UploadFiles.get(upload_id=res["upload_id"]).read_archive(entry_id=res["entry_id"]) as archive_dict:
                 entry_id = res["entry_id"]
-
                 entry_data = archive_dict[entry_id]["data"]
+
                 if entry_data["m_def"] == "hzb_combinatorial_libraries.schema_packages.hzb_library_package.UnoldPLMeasurementLibrary":
                     pl_data = entry_data
                 elif entry_data["m_def"] == "hzb_combinatorial_libraries.schema_packages.hzb_library_package.UnoldConductivityMeasurementLibrary":
@@ -214,8 +210,9 @@ class UnoldLibrary(LibrarySample, EntryData):
             x_quantity = ureg.Quantity(x, 'millimeter').to('meter').magnitude
             y_quantity = ureg.Quantity(y, 'millimeter').to('meter').magnitude
 
-            # create pixels, change 20 to len(xrf_df)
-            for i in range(10, 20):
+            # create pixels
+            # for i in range(0, len(x)):
+            for i in range(0, 20):
                 p = Pixel()
                 p.properties = PixelProperty()
                 p.properties.thickness = xrf_df["thickness"][i]
