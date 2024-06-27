@@ -28,9 +28,9 @@ maintainers = [
     { name = "Michael Götte", email = "michael.goette@helmholtz-berlin.de" },
 ]
 license = { file = "LICENSE" }
-#dependencies = ["nomad-lab>=1.2.2dev578"]
+dependencies = ["nomad-lab>=1.2.2dev578"]
 [project.urls]
-Repository = "https://github.com/nomad-hzb/nomad-chemical-energy"
+Repository = "https://github.com/nomad-hzb/hzb-combinatorial-libraries-plugin"
 
 [project.optional-dependencies]
 dev = ["ruff", "pytest", "structlog"]
@@ -76,7 +76,7 @@ select = [
     "UP",
     # isort
     "I",
-    # pylint 
+    # pylint
     "PL",
 ]
 
