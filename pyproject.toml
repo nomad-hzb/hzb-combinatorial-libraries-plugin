@@ -14,7 +14,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
 ]
 name = "hzb-combinatorial-libraries"
-description = "A schema package plugin for HZB Library Unold lab at hzb."
+description = "A schema package plugin for HZB Library Unold lab at HZB."
 version = "1.0.0"
 readme = "README.rst"
 requires-python = ">=3.9"
@@ -28,7 +28,7 @@ maintainers = [
     { name = "Michael Götte", email = "michael.goette@helmholtz-berlin.de" },
 ]
 license = { file = "LICENSE" }
-dependencies = ["nomad-lab>=1.2.2dev578"]
+dependencies = ["nomad-lab>=1.2.2dev578", nomad-material-processing>=0.0.9]
 [project.urls]
 Repository = "https://github.com/nomad-hzb/hzb-combinatorial-libraries-plugin"
 
