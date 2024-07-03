@@ -7,6 +7,18 @@ The substances used in teh sources are created as seperate archives with the dat
 
 The main process archive is `hzb_unold_lab_pvd_example.data.archive.json`.
 
+# Installation
+
+Can be installed with [uv](https://github.com/astral-sh/uv)  
+```
+uv pip install -e '.[dev]'
+```
+
+or by specificing nomads pip registry:  
+
+```
+pip install -e '.[dev]' --index-url https://gitlab.mpcdf.mpg.de/api/v4/projects/2187/packages/pypi/simple
+```
 
 # Nomad configuration for testing
 
@@ -14,9 +26,8 @@ You can test this plugin by configuring the `nomad.yaml` in nomad repo as below:
     
 ```yaml
 plugins:
-  include:
-     - 'parsers/hzb-combinatorial-libraries-plugin'
-  options:
-     parsers/hzb-combinatorial-libraries-plugin:
-       python_package: hzb_combinatorial_libraries
+  entry_points:
+    include: [
+    "hzb_combinatorial_libraries.schema_packages:hzb_library_package"
+    ]
 ```

@@ -280,15 +280,7 @@ class UnoldUVvisReflectionMeasurementLibrary(UVvisMeasurementLibrary, EntryData)
                    properties=dict(
                        order=[
                            "name",
-                       ])),
-        a_plot=[
-            {
-                'x': 'wavelength', 'y': 'measurements/:/data/intensity', 'layout': {
-                    'yaxis': {
-                        "range": [0, 1],
-                        "fixedrange": False}, 'xaxis': {
-                        "fixedrange": False}}, "config": {
-                    "scrollZoom": True, 'staticPlot': False, }}]
+                       ]))
     )
 
     def normalize(self, archive, logger):
@@ -405,13 +397,6 @@ class UnoldUVvisTransmissionMeasurementLibrary(UVvisMeasurementLibrary, EntryDat
                        order=[
                            "name",
                        ])),
-        a_plot=[
-            {
-                'x': 'wavelength', 'y': 'measurements/:/data/intensity', 'layout': {
-                    'yaxis': {
-                        "fixedrange": False}, 'xaxis': {
-                        "fixedrange": False}}, "config": {
-                    "scrollZoom": True, 'staticPlot': False, }}]
     )
 
     def normalize(self, archive, logger):

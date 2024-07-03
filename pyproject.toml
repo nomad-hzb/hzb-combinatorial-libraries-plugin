@@ -14,7 +14,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
 ]
 name = "hzb-combinatorial-libraries"
-description = "A schema package plugin for HZB Library Unold lab at hzb."
+description = "A schema package plugin for HZB Library Unold lab at HZB."
 version = "1.0.0"
 readme = "README.rst"
 requires-python = ">=3.9"
@@ -28,9 +28,22 @@ maintainers = [
     { name = "Michael Götte", email = "michael.goette@helmholtz-berlin.de" },
 ]
 license = { file = "LICENSE" }
-#dependencies = ["nomad-lab>=1.2.2dev578"]
+
+dependencies = [
+    "nomad-lab>=1.2.2dev578",
+    "nomad-lab[infrastructure]>=1.2.2dev578",
+    "nomad-material-processing>=0.0.9",
+    "nomad-baseclasses @ git+https://github.com/nomad-hzb/nomad-baseclasses.git@main",
+    'chardet>=5.1',
+    'markdown2==2.4.8',
+    'qrcode==7.4.2 ',
+    'hdf5plugin==4.3'
+]
 [project.urls]
-Repository = "https://github.com/nomad-hzb/nomad-chemical-energy"
+Repository = "https://github.com/nomad-hzb/hzb-combinatorial-libraries-plugin"
+
+[tool.uv.pip]
+index-url = "https://gitlab.mpcdf.mpg.de/api/v4/projects/2187/packages/pypi/simple"
 
 [project.optional-dependencies]
 dev = ["ruff", "pytest", "structlog"]
@@ -76,7 +89,7 @@ select = [
     "UP",
     # isort
     "I",
-    # pylint 
+    # pylint
     "PL",
 ]
 
