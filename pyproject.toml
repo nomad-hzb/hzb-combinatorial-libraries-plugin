@@ -28,6 +28,7 @@ maintainers = [
     { name = "Michael Götte", email = "michael.goette@helmholtz-berlin.de" },
 ]
 license = { file = "LICENSE" }
+
 dependencies = [
     "nomad-lab>=1.2.2dev578",
     "nomad-lab[infrastructure]>=1.2.2dev578",
@@ -40,6 +41,9 @@ dependencies = [
 ]
 [project.urls]
 Repository = "https://github.com/nomad-hzb/hzb-combinatorial-libraries-plugin"
+
+[tool.uv.pip]
+index-url = "https://gitlab.mpcdf.mpg.de/api/v4/projects/2187/packages/pypi/simple"
 
 [project.optional-dependencies]
 dev = ["ruff", "pytest", "structlog"]

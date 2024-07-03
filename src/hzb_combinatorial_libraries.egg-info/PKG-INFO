@@ -1,7 +1,7 @@
 Metadata-Version: 2.1
 Name: hzb-combinatorial-libraries
 Version: 1.0.0
-Summary: A schema package plugin for HZB Library Unold lab at hzb.
+Summary: A schema package plugin for HZB Library Unold lab at HZB.
 Author-email: Michael Götte <michael.goette@helmholtz-berlin.de>, Carla Terboven <carla.terboven@helmholtz-berlin.de>
 Maintainer-email: Carla Terboven <carla.terboven@helmholtz-berlin.de>, Michael Götte <michael.goette@helmholtz-berlin.de>
 License:                                  Apache License
@@ -206,7 +206,7 @@ License:                                  Apache License
            See the License for the specific language governing permissions and
            limitations under the License.
         
-Project-URL: Repository, https://github.com/nomad-hzb/nomad-chemical-energy
+Project-URL: Repository, https://github.com/nomad-hzb/hzb-combinatorial-libraries-plugin
 Classifier: Intended Audience :: Developers
 Classifier: Operating System :: OS Independent
 Classifier: Programming Language :: Python
@@ -218,6 +218,14 @@ Classifier: License :: OSI Approved :: MIT License
 Requires-Python: >=3.9
 Description-Content-Type: text/x-rst
 License-File: LICENSE
+Requires-Dist: nomad-lab>=1.2.2dev578
+Requires-Dist: nomad-lab[infrastructure]>=1.2.2dev578
+Requires-Dist: nomad-material-processing>=0.0.9
+Requires-Dist: nomad-baseclasses@ git+https://github.com/nomad-hzb/nomad-baseclasses.git@main
+Requires-Dist: chardet>=5.1
+Requires-Dist: markdown2==2.4.8
+Requires-Dist: qrcode==7.4.2
+Requires-Dist: hdf5plugin==4.3
 Provides-Extra: dev
 Requires-Dist: ruff; extra == "dev"
 Requires-Dist: pytest; extra == "dev"
