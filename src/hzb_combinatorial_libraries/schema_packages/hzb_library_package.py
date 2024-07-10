@@ -322,7 +322,7 @@ class UnoldUVvisReflectionMeasurementLibrary(UVvisMeasurementLibrary, EntryData)
                                                   * ureg(md['integration time'].split(" ")[1].strip()),
                                                   spot_size=md['spot size'].split(" ")[0].strip()
                                                   * ureg(md['spot size'].split(" ")[1].strip()))
-            self.wavelength = df.columns[4:]
+            self.wavelength = [float(w) for w in df.columns[4:]]
             for i, row in df.iterrows():
                 data = UVvisDataSimple(intensity=row[df.columns[4:]])
 
@@ -437,7 +437,7 @@ class UnoldUVvisTransmissionMeasurementLibrary(UVvisMeasurementLibrary, EntryDat
                                                   * ureg(md['integration time'].split(" ")[1].strip()),
                                                   spot_size=md['spot size'].split(" ")[0].strip()
                                                   * ureg(md['spot size'].split(" ")[1].strip()))
-            self.wavelength = df.columns[4:]
+            self.wavelength = [float(w) for w in df.columns[4:]]
             for i, row in df.iterrows():
                 data = UVvisDataSimple(intensity=row[df.columns[4:]])
 
@@ -486,18 +486,16 @@ class UnoldPLMeasurementLibrary(PLMeasurementLibrary, EntryData):
             if not self.samples:
                 set_sample_reference(archive, self, md["Sample_ID"].strip("#"))
             if self.properties is None:
-                self.properties = PLPropertiesLibrary(integration_time=md['integration time'].split(" ")[0].strip()
+                self.properties = PLPropertiesLibrary(integration_time=float(md['integration time'].split(" ")[0].strip())
                                                       * ureg(
                     md['integration time'].split(" ")[1].strip()),
-                    spot_size=md['spot size'].split(" ")[0].strip(),
+                    spot_size=float(md['spot size'].split(" ")[0].strip()),
                     # * ureg(md['spot size'].split(" ")[1].strip()),
-                    long_pass_filter=md['long pass filter'].split(" ")[0].strip()
-                    * ureg(
-                                                          md['long pass filter'].split(" ")[1].strip()),
-                    laser_wavelength=md['laser wavelength'].split(" ")[0].strip()
-                    * ureg(
-                                                          md['laser wavelength'].split(" ")[1].strip()))
-            self.wavelength = df.columns[6:]
+                    long_pass_filter=float(md['long pass filter'].split(" ")[0].strip())
+                    * ureg(md['long pass filter'].split(" ")[1].strip()),
+                    laser_wavelength=float(md['laser wavelength'].split(" ")[0].strip())
+                    * ureg(md['laser wavelength'].split(" ")[1].strip()))
+            self.wavelength = [float(w) for w in df.columns[6:]]
             for i, row in df.iterrows():
                 data = PLDataSimple(intensity=row[df.columns[6:]])
 
