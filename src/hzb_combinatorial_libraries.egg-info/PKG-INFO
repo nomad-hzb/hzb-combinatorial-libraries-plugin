@@ -221,11 +221,11 @@ License-File: LICENSE
 Requires-Dist: nomad-lab>=1.2.2dev578
 Requires-Dist: nomad-lab[infrastructure]>=1.2.2dev578
 Requires-Dist: nomad-material-processing>=0.0.9
-Requires-Dist: nomad-baseclasses@ git+https://github.com/nomad-hzb/nomad-baseclasses.git@main
+Requires-Dist: nomad-baseclasses@ git+https://github.com/nomad-hzb/nomad-baseclasses.git
 Requires-Dist: chardet>=5.1
 Requires-Dist: markdown2==2.4.8
 Requires-Dist: qrcode==7.4.2
-Requires-Dist: hdf5plugin==4.3
+Requires-Dist: hdf5plugin>=4.3
 Provides-Extra: dev
 Requires-Dist: ruff; extra == "dev"
 Requires-Dist: pytest; extra == "dev"

@@ -36,11 +36,9 @@ from baseclasses import (
 from nomad.datamodel.results import BandGap
 from nomad.datamodel.data import ArchiveSection
 from nomad.datamodel.results import Properties, ElectronicProperties
-from nomad_material_processing.combinatorial import ContinuousCombiSample
 from nomad.datamodel.data import EntryData
 import datetime
 from hzb_combinatorial_libraries.schema_packages.utils import set_library_reference
-from nomad_material_processing.combinatorial import CombinatorialSample
 # from nomad_material_processing.physical_vapor_deposition import (
 # PVDChamberEnvironment,
 # PVDMaterialEvaporationRate,
@@ -51,12 +49,12 @@ from nomad_material_processing.combinatorial import CombinatorialSample
 # PVDSubstrateTemperature,
 # )
 
-from nomad_material_processing.vapor_deposition import (
+from nomad_material_processing.vapor_deposition.general import (
     ChamberEnvironment,
     Pressure,
     Temperature,
 )
-from nomad_material_processing.vapor_deposition.pvd import (
+from nomad_material_processing.vapor_deposition.pvd.general import (
     ImpingingFlux,
     SourcePower,
     PVDSampleParameters,
@@ -831,40 +829,40 @@ class PixelProperty(EntryData):
     )
 
 
-class Pixel(ContinuousCombiSample, EntryData, ArchiveSection):
-    m_def = Section(
-        categories=[UnoldLabCategory],
-        label='UnoldPixel'
-    )
-    properties = SubSection(
-        section_def=PixelProperty,
-        description='''
-          The properties of the pixel.
-          ''',
-    )
-    library_reference = SubSection(
-        section_def=CompositeSystemReference,
-        description='''
-          The samples refer to the library ID.
-          ''',
-    )
+# class Pixel(ContinuousCombiSample, EntryData, ArchiveSection):
+#     m_def = Section(
+#         categories=[UnoldLabCategory],
+#         label='UnoldPixel'
+#     )
+#     properties = SubSection(
+#         section_def=PixelProperty,
+#         description='''
+#           The properties of the pixel.
+#           ''',
+#     )
+#     library_reference = SubSection(
+#         section_def=CompositeSystemReference,
+#         description='''
+#           The samples refer to the library ID.
+#           ''',
+#     )
 
-    def normalize(self, archive, logger):
-        super(ContinuousCombiSample, self).normalize(archive, logger)
+#     def normalize(self, archive, logger):
+#         super(ContinuousCombiSample, self).normalize(archive, logger)
 
-        # self.components for xrf, check htem how to do it, and add element to results.materials.elements
-        if self.lab_id:
-            id = self.lab_id.split(':')[0].strip()
-            set_library_reference(archive, self, id)
-        else:
-            raise ValueError("Pixel Lab ID is missing")
+#         # self.components for xrf, check htem how to do it, and add element to results.materials.elements
+#         if self.lab_id:
+#             id = self.lab_id.split(':')[0].strip()
+#             set_library_reference(archive, self, id)
+#         else:
+#             raise ValueError("Pixel Lab ID is missing")
 
-        if self.properties and self.properties.bandgap:
-            bg = BandGap(value=np.float64(self.properties.bandgap) * ureg('eV'))
-            if not archive.results.properties:
-                archive.results.properties = Properties()
-            if not archive.results.properties.electronic:
-                archive.results.properties.electronic = ElectronicProperties(band_gap=[bg])
+#         if self.properties and self.properties.bandgap:
+#             bg = BandGap(value=np.float64(self.properties.bandgap) * ureg('eV'))
+#             if not archive.results.properties:
+#                 archive.results.properties = Properties()
+#             if not archive.results.properties.electronic:
+#                 archive.results.properties.electronic = ElectronicProperties(band_gap=[bg])
 
 
 m_package.__init_metainfo__()
