@@ -215,12 +215,12 @@ Classifier: Programming Language :: Python :: 3.10
 Classifier: Programming Language :: Python :: 3.11
 Classifier: Programming Language :: Python :: 3.12
 Classifier: License :: OSI Approved :: MIT License
-Requires-Python: >=3.9
+Requires-Python: >=3.10
 Description-Content-Type: text/x-rst
 License-File: LICENSE
-Requires-Dist: nomad-lab>=1.2.2dev578
-Requires-Dist: nomad-lab[infrastructure]>=1.2.2dev578
-Requires-Dist: nomad-material-processing>=0.0.9
+Requires-Dist: nomad-lab>=1.3.10
+Requires-Dist: nomad-lab[infrastructure]>=1.3.10
+Requires-Dist: nomad-material-processing>=1.0.0
 Requires-Dist: nomad-baseclasses@ git+https://github.com/nomad-hzb/nomad-baseclasses.git
 Requires-Dist: chardet>=5.1
 Requires-Dist: markdown2==2.4.8
