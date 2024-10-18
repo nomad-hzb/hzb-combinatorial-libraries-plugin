@@ -348,13 +348,19 @@ class UnoldTRPLMeasurementLibrary(TimeResolvedPhotoluminescenceMeasurementLibrar
 
     def normalize(self, archive, logger):
         with archive.m_context.raw_file(archive.metadata.mainfile) as f:
-            path = os.path.dirname(f.name)
             file_name = os.path.basename(f.name)
             if not self.samples:
                 set_sample_reference(archive, self, "_".join(file_name.split("_")[0:4]).strip("#"))
         if self.data_file:
             import xarray as xr
-            data = xr.load_dataset(os.path.join(path, self.data_file))
+            import tempfile
+
+            with archive.m_context.raw_file(self.data_file, "rb") as f:
+                file_content = f.read()
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".knc") as temp_file:
+                    temp_file.write(file_content)
+                    temp_file_path = temp_file.name
+                data = xr.load_dataset(temp_file_path)
             # self.time = data.trpl_t.values * ureg(data.trpl_t.units)
             self.properties = TRPLPropertiesBasic(
                 repetition_rate=data.trpl_repetition_rate.values * ureg(data.trpl_repetition_rate.units),
@@ -471,7 +477,6 @@ class UnoldPLMeasurementLibrary(PLMeasurementLibrary, EntryData):
 
     def normalize(self, archive, logger):
         with archive.m_context.raw_file(archive.metadata.mainfile) as f:
-            path = os.path.dirname(f.name)
             file_name = os.path.basename(f.name)
             if not self.samples:
                 set_sample_reference(archive, self, "_".join(file_name.split("_")[0:4]).strip("#"))
@@ -479,7 +484,8 @@ class UnoldPLMeasurementLibrary(PLMeasurementLibrary, EntryData):
             measurements = []
 
             from hzb_combinatorial_libraries.schema_packages.file_parser.pl_parser import read_file_pl_unold
-            md, df = read_file_pl_unold(os.path.join(path, self.data_file))
+            with archive.m_context.raw_file(self.data_file, "rt") as f:
+                md, df = read_file_pl_unold(f)
             self.datetime = convert_datetime(md["Date_Time"], datetime_format="%Y_%m_%d_%H%M", utc=False)
             if not self.samples:
                 set_sample_reference(archive, self, md["Sample_ID"].strip("#"))
@@ -524,7 +530,6 @@ class UnoldConductivityMeasurementLibrary(ConductivityMeasurementLibrary, EntryD
     def normalize(self, archive, logger):
 
         with archive.m_context.raw_file(archive.metadata.mainfile) as f:
-            path = os.path.dirname(f.name)
             file_name = os.path.basename(f.name)
             if not self.samples:
                 set_sample_reference(archive, self, "_".join(file_name.split("_")[0:4]).strip("#"))
@@ -533,7 +538,8 @@ class UnoldConductivityMeasurementLibrary(ConductivityMeasurementLibrary, EntryD
             measurements = []
 
             from hzb_combinatorial_libraries.schema_packages.file_parser.conductivity_parser import read_conductivity
-            md, df = read_conductivity(os.path.join(path, self.data_file))
+            with archive.m_context.raw_file(self.data_file, "rt") as f:
+                md, df = read_conductivity(f)
             self.datetime = convert_datetime(md["Date_Time"], datetime_format="%Y_%m_%d_%H%M", utc=False)
             if not self.samples:
                 set_sample_reference(archive, self, md["Sample_ID"].strip("#"))
@@ -628,7 +634,7 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
             import pandas as pd
             import numpy as np
 
-            with archive.m_context.raw_file(self.log_file, "r") as fh:
+            with archive.m_context.raw_file(self.log_file, "rt") as fh:
                 line = fh.readline().strip()
                 metadata = {}
                 while line.startswith("#"):

@@ -6,18 +6,17 @@ import os
 from datetime import datetime
 
 
-def read_conductivity(file_path: str):
-    with open(file_path, 'r+') as file_handle:
-        header = {}
+def read_conductivity(file_handle: str):
+    header = {}
+    line_split = file_handle.readline().split(";")
+    while len(line_split) == 2:
+        key = line_split[0].strip().strip('"')
+        value = line_split[1].strip().strip('"')
+        header[key] = value
         line_split = file_handle.readline().split(";")
-        while len(line_split) == 2:
-            key = line_split[0].strip().strip('"')
-            value = line_split[1].strip().strip('"')
-            header[key] = value
-            line_split = file_handle.readline().split(";")
-        wavelengths = np.array(line_split[-1].strip().split(","))
-        columns = ["x", "y", "z", "resistance"]
-        df = pd.read_csv(file_handle, names=columns, delimiter=';|,', engine='python')
+    wavelengths = np.array(line_split[-1].strip().split(","))
+    columns = ["x", "y", "z", "resistance"]
+    df = pd.read_csv(file_handle, names=columns, delimiter=';|,', engine='python')
     return header, df.dropna(axis=1)
 
 
