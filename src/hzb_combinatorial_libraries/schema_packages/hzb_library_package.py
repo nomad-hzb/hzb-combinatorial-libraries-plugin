@@ -97,11 +97,18 @@ from nomad.datamodel.data import (
     EntryDataCategory,
 )
 
+from nomad_material_processing.combinatorial import (
+    ThinFilmCombinatorialSample)
+
 m_package = SchemaPackage()
 
 
 class UnoldLabCategory(EntryDataCategory):
     m_def = Category(label='HZB Unold Lab', categories=[EntryDataCategory])
+
+
+class UnoldSample(ThinFilmCombinatorialSample):
+    pass
 
 
 class UnoldLibrary(LibrarySample, EntryData):
