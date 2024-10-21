@@ -96,9 +96,12 @@ from nomad.metainfo.metainfo import (
 from nomad.datamodel.data import (
     EntryDataCategory,
 )
+from baseclasses.customreadable_identifier import ReadableIdentifiersCustom
 
 from nomad_material_processing.combinatorial import (
-    ThinFilmCombinatorialSample)
+    ThinFilmCombinatorialSample,
+    CombinatorialLibrary)
+from baseclasses.helper.add_solar_cell import add_solar_cell, add_band_gap
 
 m_package = SchemaPackage()
 
@@ -108,10 +111,27 @@ class UnoldLabCategory(EntryDataCategory):
 
 
 class UnoldSample(ThinFilmCombinatorialSample):
-    pass
+    m_def = Section(
+        categories=[UnoldLabCategory])
+
+    def normalize(self, archive, logger):
+        super(UnoldSample, self).normalize(archive, logger)
+        add_solar_cell(archive)
+
+        if self.band_gap and self.band_gap.value:
+            add_band_gap(archive, self.band_gap.value)
+
+        if self.photovoltaic and self.photovoltaic.efficiency:
+            archive.results.properties.optoelectronic.solar_cell.efficiency = self.photovoltaic.efficiency
+        if self.photovoltaic and self.photovoltaic.jsc:
+            archive.results.properties.optoelectronic.solar_cell.short_circuit_current_density = self.photovoltaic.jsc
+        if self.photovoltaic and self.photovoltaic.voc:
+            archive.results.properties.optoelectronic.solar_cell.open_circuit_voltage = self.photovoltaic.voc
+        if self.photovoltaic and self.photovoltaic.ff:
+            archive.results.properties.optoelectronic.solar_cell.fill_factor = self.photovoltaic.ff
 
 
-class UnoldLibrary(LibrarySample, EntryData):
+class UnoldLibrary(CombinatorialLibrary, EntryData):
     m_def = Section(
         categories=[UnoldLabCategory],
         a_eln=dict(
@@ -121,6 +141,14 @@ class UnoldLibrary(LibrarySample, EntryData):
         type=str,
         a_eln=dict(component='FileEditQuantity'),
         a_browser=dict(adaptor='RawFileAdaptor'))
+
+    grid_information = Quantity(
+        type=str,
+        a_eln=dict(component='StringEditQuantity')
+    )
+
+    library_id = SubSection(
+        section_def=ReadableIdentifiersCustom)
 
     def normalize(self, archive, logger):
         super(UnoldLibrary,
