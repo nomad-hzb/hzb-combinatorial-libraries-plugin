@@ -123,11 +123,11 @@ class UnoldSample(ThinFilmCombinatorialSample):
 
         if self.photovoltaic and self.photovoltaic.efficiency:
             archive.results.properties.optoelectronic.solar_cell.efficiency = self.photovoltaic.efficiency
-        if self.photovoltaic and self.photovoltaic.efficiency:
+        if self.photovoltaic and self.photovoltaic.jsc:
             archive.results.properties.optoelectronic.solar_cell.short_circuit_current_density = self.photovoltaic.jsc
-        if self.photovoltaic and self.photovoltaic.efficiency:
+        if self.photovoltaic and self.photovoltaic.voc:
             archive.results.properties.optoelectronic.solar_cell.open_circuit_voltage = self.photovoltaic.voc
-        if self.photovoltaic and self.photovoltaic.efficiency:
+        if self.photovoltaic and self.photovoltaic.ff:
             archive.results.properties.optoelectronic.solar_cell.fill_factor = self.photovoltaic.ff
 
 
