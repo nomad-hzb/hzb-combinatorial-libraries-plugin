@@ -121,14 +121,14 @@ class UnoldSample(ThinFilmCombinatorialSample):
         if self.band_gap and self.band_gap.value:
             add_band_gap(archive, self.band_gap.value)
 
-        if self.photovoltaic and self.photovoltaic.efficiency:
-            archive.results.properties.optoelectronic.solar_cell.efficiency = self.photovoltaic.efficiency
-        if self.photovoltaic and self.photovoltaic.jsc:
-            archive.results.properties.optoelectronic.solar_cell.short_circuit_current_density = self.photovoltaic.jsc
-        if self.photovoltaic and self.photovoltaic.voc:
-            archive.results.properties.optoelectronic.solar_cell.open_circuit_voltage = self.photovoltaic.voc
-        if self.photovoltaic and self.photovoltaic.ff:
-            archive.results.properties.optoelectronic.solar_cell.fill_factor = self.photovoltaic.ff
+        if self.photovoltaic and self.photovoltaic.efficiency and self.photovoltaic.efficiency.value:
+            archive.results.properties.optoelectronic.solar_cell.efficiency = self.photovoltaic.efficiency.value
+        if self.photovoltaic and self.photovoltaic.jsc and self.photovoltaic.jsc.value:
+            archive.results.properties.optoelectronic.solar_cell.short_circuit_current_density = self.photovoltaic.jsc.value
+        if self.photovoltaic and self.photovoltaic.voc and self.photovoltaic.voc.value:
+            archive.results.properties.optoelectronic.solar_cell.open_circuit_voltage = self.photovoltaic.voc.value
+        if self.photovoltaic and self.photovoltaic.ff and self.photovoltaic.ff.value:
+            archive.results.properties.optoelectronic.solar_cell.fill_factor = self.photovoltaic.ff.value
 
 
 class UnoldLibrary(CombinatorialLibrary, EntryData):
