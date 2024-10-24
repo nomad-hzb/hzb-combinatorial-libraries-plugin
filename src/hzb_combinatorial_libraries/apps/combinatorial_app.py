@@ -29,7 +29,7 @@ combinatorial_app = App(
     # entire package, or just a single schema from a package.
     filters=Filters(
         include=[
-            '*#hzb_combinatorial_libraries.schema.Pixel',
+            '*#hzb_combinatorial_libraries.schema_packages.hzb_library_package.UnoldSample',
         ]
     ),
     # Controls which columns are shown in the results table
@@ -68,7 +68,8 @@ combinatorial_app = App(
     # MySchema are included.
     filters_locked={
         'results.eln.sections': [
-            'HTEMSample',
+            # 'HTEMSample',
+            'UnoldSample',
         ]
     },
     # Controls the filter menus shown on the left
