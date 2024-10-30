@@ -4,6 +4,7 @@ import base64
 import xml.etree.ElementTree as ElTree
 import struct
 from datetime import datetime
+import tempfile
 
 # from kExceptions import KameleontImportError
 # from kXarrayMethods import make_dimension_array, make_data_array, make_dataset
@@ -433,7 +434,7 @@ def get_deconvolution_results(data_root: ElTree.Element) -> Tuple[str, List[Dict
     return deconvolution_method, deconvolution_results
 
 
-def read(file_paths: list):  # , required_params: Dict[str, Any]):  # , library_infos: List[Dict[str, Any]],
+def read(file_obj_paths: list):  # , required_params: Dict[str, Any]):  # , library_infos: List[Dict[str, Any]],
     # user: str):
 
     #
@@ -457,8 +458,11 @@ def read(file_paths: list):  # , required_params: Dict[str, Any]):  # , library_
     layer_rows = []  # list of dicts containing the layer results (atom_percent, weight_percent of element)
     layer_prop_rows = []  # list of dicts containing layer properties (density, thickness, ...)
     fit_bkg = []  # list of np.arrays with the fitted background
-    for idx, spx_file in enumerate(file_paths):
-        spx_tree = ElTree.parse(spx_file, parser=ElTree.XMLParser(encoding='WINDOWS-1252'))
+    for idx, spx_file_obj in enumerate(file_obj_paths):
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".spx") as temp_file:
+            temp_file.write(spx_file_obj.read())
+            temp_file_path = temp_file.name
+        spx_tree = ElTree.parse(temp_file_path, parser=ElTree.XMLParser(encoding='WINDOWS-1252'))
         spx_root = spx_tree.getroot()
         # read measurement infos
         info_dict = {}  # dict containing the info, that will be used to append as a row in the measurement_data

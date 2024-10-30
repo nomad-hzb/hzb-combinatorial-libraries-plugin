@@ -175,9 +175,8 @@ class UnoldLibrary(CombinatorialLibrary, EntryData):
             # data = search_data(archive, self.lab_id, "UnoldPLMeasurementLibrary")
 
 
-def load_XRF_txt(file):
-    with open(file) as input_file:
-        head = [next(input_file) for _ in range(3)]
+def load_XRF_txt(input_file):
+    head = [next(input_file) for _ in range(3)]
     pos = [0]
     ns = False
     for i, c in enumerate(head[2]):
@@ -195,9 +194,9 @@ def load_XRF_txt(file):
         col.append((c1, c2))
         c_old = c1
     if "," in head[2]:
-        composition_data = pd.read_csv(file, names=col, header=None, skiprows=2, sep="\s{2,}", decimal=",", index_col=0)
+        composition_data = pd.read_csv(input_file, names=col, header=None, skiprows=2, sep="\s{2,}", decimal=",", index_col=0)
     else:
-        composition_data = pd.read_csv(file, names=col, header=None, skiprows=2, sep="\s{2,}", decimal=".", index_col=0)
+        composition_data = pd.read_csv(input_file, names=col, header=None, skiprows=2, sep="\s{2,}", decimal=".", index_col=0)
 
     return composition_data
 
@@ -215,8 +214,7 @@ class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
 
     def normalize(self, archive, logger):
 
-        with archive.m_context.raw_file(archive.metadata.mainfile) as f:
-            path = os.path.dirname(f.name)
+        with archive.m_context.raw_file(archive.metadata.mainfile, "rt") as f:
             file_name = os.path.basename(f.name)
             if not self.samples:
                 set_sample_reference(archive, self, "_".join(file_name.split("_")[0:4]).strip("#"))
@@ -224,50 +222,53 @@ class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
         if self.samples and self.samples[0].lab_id:
             search_key = self.samples[0].lab_id
             # find data
-            for item in os.listdir(path):
-                if not os.path.isdir(os.path.join(path, item)):
+            for item in archive.m_context.upload_files.raw_directory_list():
+                if archive.m_context.upload_files.raw_path_is_file(item.path):
                     continue
-                if not item.startswith(f"{search_key}"):
+                if not item.path.startswith(f"{search_key}"):
                     continue
-                self.data_folder = item
+                self.data_folder = item.path
             # find images
             images = []
-            for item in os.listdir(path):
-                if not os.path.isfile(os.path.join(path, item)):
+            for item in archive.m_context.upload_files.raw_directory_list():
+                if archive.m_context.upload_files.raw_path_is_file(item.path):
                     continue
-                if not (item.startswith(f"{search_key}#") and item.endswith(".bmp")):
+                if not (item.path.startswith(f"{search_key}#") and item.path.endswith(".bmp")):
                     continue
-                images.append(item)
+                images.append(item.path)
             self.images = images
-
-        data_folder = os.path.join(path, self.data_folder if self.data_folder else '')
-        if self.composition_file and self.data_folder and "Messung.spx" in os.listdir(data_folder):
-            file_path = os.path.join(path, self.composition_file)
+        if self.composition_file and self.data_folder and os.path.join(self.data_folder, "Messung.spx") in [ f.path for f in archive.m_context.upload_files.raw_directory_list(self.data_folder)]   :
+            file_path = self.composition_file
             try:
-                with open(file_path) as input_file:
-                    pass
+                with archive.m_context.raw_file(file_path, "rt") as f:
+                   pass
             except:
-                file_path = os.path.join(path, self.data_folder, self.composition_file)
+                file_path = os.path.join(self.data_folder, self.composition_file)
+
             measurements = []
 
             from hzb_combinatorial_libraries.schema_packages.file_parser.xrf_spx_parser import read as xrf_read
-            files = [os.path.join(data_folder, file) for file in os.listdir(data_folder)
-                     if file.endswith(".spx") and not file.lower() == "messung.spx"]
+            files = [os.path.basename(file.path) for file in archive.m_context.upload_files.raw_directory_list(self.data_folder)
+                     if file.path.endswith(".spx") and not file.path.lower().endswith("messung.spx")]
             files.sort()
-
-            _, energy, measurement_rows, positions_array, _, _ = xrf_read(
-                [os.path.join(data_folder, "Messung.spx")])
+            
+            with archive.m_context.raw_file(os.path.join(self.data_folder, "Messung.spx"), "rb") as f:
+                _, energy, measurement_rows, positions_array, _, _ = xrf_read([f])
 
             self.datetime = convert_datetime(
                 measurement_rows[0]["DateTime"], datetime_format="%Y-%m-%dT%H:%M:%S.%f", utc=False)
             self.energy = energy
             if file_path.endswith(".txt"):
-                composition_data = load_XRF_txt(file_path)
+                with archive.m_context.raw_file(file_path, "rt") as f:
+                    composition_data = load_XRF_txt(f)
             else:
-                composition_data = pd.read_excel(os.path.join(path, self.composition_file), header=[0, 1], index_col=0)
+                with archive.m_context.raw_file(file_path, "rb") as f:
+                    composition_data = pd.read_excel(f, header=[0, 1], index_col=0)
+                    
             material_name = ''
             for i, file in enumerate(files):
-                _, _, _, ar, _, _ = xrf_read([file])
+                with archive.m_context.raw_file(os.path.join(self.data_folder, file), "rb") as f:
+                    _, _, _, ar, _, _ = xrf_read([f])
                 measurement_row = composition_data.loc[os.path.splitext(os.path.basename(file))[0]]
                 layer_data = {}
                 for v in measurement_row.items():

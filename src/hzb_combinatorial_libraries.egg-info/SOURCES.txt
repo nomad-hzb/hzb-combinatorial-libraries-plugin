@@ -27,6 +27,8 @@ src/hzb_combinatorial_libraries.egg-info/entry_points.txt
 src/hzb_combinatorial_libraries.egg-info/requires.txt
 src/hzb_combinatorial_libraries.egg-info/top_level.txt
 src/hzb_combinatorial_libraries/Calculations/calculation.py
+src/hzb_combinatorial_libraries/apps/__init__.py
+src/hzb_combinatorial_libraries/apps/combinatorial_app.py
 src/hzb_combinatorial_libraries/apps/nomad_app_config.yaml
 src/hzb_combinatorial_libraries/apps/nomad_example_scatter.yaml
 src/hzb_combinatorial_libraries/parsers/__init__.py
