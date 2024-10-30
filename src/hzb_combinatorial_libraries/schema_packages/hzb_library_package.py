@@ -323,30 +323,31 @@ class UnoldUVvisReflectionMeasurementLibrary(UVvisMeasurementLibrary, EntryData)
         dark_key = "dark"
         reference_key = "mirror"
         with archive.m_context.raw_file(archive.metadata.mainfile) as f:
-            path = os.path.dirname(f.name)
             file_name = os.path.basename(f.name)
             if not self.samples:
                 set_sample_reference(archive, self, "_".join(file_name.split("_")[0:4]).strip("#"))
 
         if not self.reference_file:
-            for file in os.listdir(path):
-                if reference_key not in file or key not in file:
+            for file in archive.m_context.upload_files.raw_directory_list():
+                if reference_key not in file.path or key not in file.path:
                     continue
-                self.reference_file = file
+                self.reference_file = file.path
 
         if not self.dark_file:
-            for file in os.listdir(path):
-                if dark_key not in file or key not in file:
+            for file in archive.m_context.upload_files.raw_directory_list():
+                if dark_key not in file.path or key not in file.path:
                     continue
-                self.dark_file = file
+                self.dark_file = file.path
 
         if self.data_file and self.reference_file and self.dark_file:
             measurements = []
 
             from hzb_combinatorial_libraries.schema_packages.file_parser.uvvis_parser import read_uvvis
-            md, df = read_uvvis(os.path.join(path, self.data_file),
-                                os.path.join(path, self.reference_file),
-                                os.path.join(path, self.dark_file))
+            with archive.m_context.raw_file(self.data_file, "rt") as data_f, \
+                    archive.m_context.raw_file(self.reference_file, "rt") as ref_f,\
+                    archive.m_context.raw_file(self.dark_file, "rt") as dark_f: 
+                md, df = read_uvvis(data_f, ref_f, dark_f)
+                
             self.datetime = convert_datetime(md["Date_Time"], datetime_format="%Y_%m_%d_%H%M", utc=False)
 
             if not self.samples:
@@ -445,30 +446,30 @@ class UnoldUVvisTransmissionMeasurementLibrary(UVvisMeasurementLibrary, EntryDat
         dark_key = "dark"
         reference_key = "light"
         with archive.m_context.raw_file(archive.metadata.mainfile) as f:
-            path = os.path.dirname(f.name)
             file_name = os.path.basename(f.name)
             if not self.samples:
                 set_sample_reference(archive, self, "_".join(file_name.split("_")[0:4]).strip("#"))
 
         if not self.reference_file:
-            for file in os.listdir(path):
-                if reference_key not in file or key not in file:
+            for file in archive.m_context.upload_files.raw_directory_list():
+                if reference_key not in file.path or key not in file.path:
                     continue
-                self.reference_file = file
+                self.reference_file = file.path
 
         if not self.dark_file:
-            for file in os.listdir(path):
-                if dark_key not in file or key not in file:
+            for file in archive.m_context.upload_files.raw_directory_list():
+                if dark_key not in file.path or key not in file.path:
                     continue
-                self.dark_file = file
+                self.dark_file = file.path
 
         if self.data_file and self.reference_file and self.dark_file:
             measurements = []
 
             from hzb_combinatorial_libraries.schema_packages.file_parser.uvvis_parser import read_uvvis
-            md, df = read_uvvis(os.path.join(path, self.data_file),
-                                os.path.join(path, self.reference_file),
-                                os.path.join(path, self.dark_file))
+            with archive.m_context.raw_file(self.data_file, "rt") as data_f, \
+                    archive.m_context.raw_file(self.reference_file,"rt") as ref_f,\
+                    archive.m_context.raw_file(self.dark_file, "rt") as dark_f: 
+                md, df = read_uvvis(data_f, ref_f, dark_f)
             self.datetime = convert_datetime(md["Date_Time"], datetime_format="%Y_%m_%d_%H%M", utc=False)
             if not self.samples:
                 set_sample_reference(archive, self, md["Sample_ID"].strip("#"))

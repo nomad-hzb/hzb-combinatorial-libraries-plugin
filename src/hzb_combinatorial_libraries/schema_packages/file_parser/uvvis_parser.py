@@ -59,29 +59,28 @@ x_offset = 0
 y_offset = 0
 
 
-def _read_file_uvvis(file_path: str, columns):
-    with open(file_path, 'r+') as file_handle:
-        header = {}
+def _read_file_uvvis(file_handle: str, columns):
+    header = {}
+    line_split = file_handle.readline().split(";")
+    while len(line_split) == 2:
+        key = line_split[0].strip().strip('"')
+        value = line_split[1].strip().strip('"')
+        header[key] = value
         line_split = file_handle.readline().split(";")
-        while len(line_split) == 2:
-            key = line_split[0].strip().strip('"')
-            value = line_split[1].strip().strip('"')
-            header[key] = value
-            line_split = file_handle.readline().split(";")
-        line_split = file_handle.readline().split(";")
-        wavelengths = np.array(line_split[-1].strip().split(","))
-        columns.extend(wavelengths)
-        df = pd.read_csv(file_handle, names=columns, delimiter=';|,', engine='python')
+    line_split = file_handle.readline().split(";")
+    wavelengths = np.array(line_split[-1].strip().split(","))
+    columns.extend(wavelengths)
+    df = pd.read_csv(file_handle, names=columns, delimiter=';|,', engine='python')
     return header, df.dropna(axis=1)
 
 
-def read_uvvis(data_file, reference_file, dark_file):
+def read_uvvis(data_obj_file, reference__obj_file, dark_obj_file):
 
     # Read MeasurementFile
     columns = ["x", "y", "z", "integration_time"]
-    spectrums = _read_file_uvvis(data_file, columns.copy())
-    reference = _read_file_uvvis(reference_file, columns.copy())
-    dark = _read_file_uvvis(dark_file, columns.copy())
+    spectrums = _read_file_uvvis(data_obj_file, columns.copy())
+    reference = _read_file_uvvis(reference__obj_file, columns.copy())
+    dark = _read_file_uvvis(dark_obj_file, columns.copy())
 
     if spectrums is None or reference is None or dark is None:
         raise
