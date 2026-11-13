@@ -15,30 +15,54 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import datetime
 import os
+
 import numpy as np
 import pandas as pd
-
-from nomad.units import ureg
-from baseclasses.solar_energy import (
-    UVvisMeasurementLibrary, UVvisDataSimple, UVvisSingleLibraryMeasurement, UVvisProperties,
-    ConductivityMeasurementLibrary, ConductivityProperties, ConductivitySingleLibraryMeasurement, PLPropertiesLibrary,
-    PLDataSimple, PLSingleLibraryMeasurement, PLMeasurementLibrary,
-    TimeResolvedPhotoluminescenceMeasurementLibrary, TimeResolvedPhotoluminescenceSingleLibraryMeasurement,
-    TRPLPropertiesBasic, TRPLDataSimple
-)
 from baseclasses.characterizations import (
-    XRFLibrary, XRFSingleLibraryMeasurement, XRFProperties, XRFComposition, XRFData, XRFLayer)
-from baseclasses.helper.utilities import convert_datetime, set_sample_reference
-from baseclasses import (
-    LibrarySample
+    XRFComposition,
+    XRFLayer,
+    XRFLibrary,
+    XRFSingleLibraryMeasurement,
 )
-from nomad.datamodel.results import BandGap
-from nomad.datamodel.data import ArchiveSection
-from nomad.datamodel.results import Properties, ElectronicProperties
-from nomad.datamodel.data import EntryData
-import datetime
-from hzb_combinatorial_libraries.schema_packages.utils import set_library_reference
+from baseclasses.customreadable_identifier import ReadableIdentifiersCustom
+from baseclasses.helper.add_solar_cell import add_band_gap, add_solar_cell
+from baseclasses.helper.utilities import convert_datetime, set_sample_reference
+from baseclasses.solar_energy import (
+    ConductivityMeasurementLibrary,
+    ConductivityProperties,
+    ConductivitySingleLibraryMeasurement,
+    PLDataSimple,
+    PLMeasurementLibrary,
+    PLPropertiesLibrary,
+    PLSingleLibraryMeasurement,
+    TimeResolvedPhotoluminescenceMeasurementLibrary,
+    TRPLPropertiesBasic,
+    UVvisDataSimple,
+    UVvisMeasurementLibrary,
+    UVvisProperties,
+    UVvisSingleLibraryMeasurement,
+)
+from nomad.datamodel.data import (
+    EntryData,
+    EntryDataCategory,
+)
+from nomad.datamodel.metainfo.annotations import (
+    BrowserAnnotation,
+    ELNAnnotation,
+)
+from nomad.datamodel.metainfo.basesections import (
+    PubChemPureSubstanceSection,
+    PureSubstanceComponent,
+)
+from nomad.metainfo import Quantity, SchemaPackage, Section, SubSection
+from nomad.metainfo.metainfo import (
+    Category,
+)
+from nomad.units import ureg
+from nomad_material_processing.combinatorial import CombinatorialLibrary
+
 # from nomad_material_processing.physical_vapor_deposition import (
 # PVDChamberEnvironment,
 # PVDMaterialEvaporationRate,
@@ -48,7 +72,6 @@ from hzb_combinatorial_libraries.schema_packages.utils import set_library_refere
 # PVDSubstrate,
 # PVDSubstrateTemperature,
 # )
-
 from nomad_material_processing.vapor_deposition.general import (
     ChamberEnvironment,
     Pressure,
@@ -56,8 +79,8 @@ from nomad_material_processing.vapor_deposition.general import (
 )
 from nomad_material_processing.vapor_deposition.pvd.general import (
     ImpingingFlux,
-    SourcePower,
     PVDSampleParameters,
+    SourcePower,
 )
 from nomad_material_processing.vapor_deposition.pvd.thermal import (
     ThermalEvaporation,
@@ -66,42 +89,10 @@ from nomad_material_processing.vapor_deposition.pvd.thermal import (
     ThermalEvaporationSource,
     ThermalEvaporationStep,
 )
-
-from nomad.datamodel.metainfo.basesections import (
-    PureSubstanceComponent,
-    PubChemPureSubstanceSection
-)
-
+from nomad_material_processing_combinatorial import ThinFilmCombinatorialSample
 from structlog.stdlib import (
     BoundLogger,
 )
-from nomad.metainfo import (
-    Package,
-    Section,
-    Quantity, SubSection,
-    SchemaPackage
-)
-
-from nomad.datamodel.metainfo.basesections import CompositeSystemReference
-
-from nomad.datamodel.metainfo.annotations import ELNComponentEnum
-from nomad.datamodel.metainfo.annotations import (
-    ELNAnnotation,
-    BrowserAnnotation,
-)
-
-from nomad.metainfo.metainfo import (
-    Category,
-)
-from nomad.datamodel.data import (
-    EntryDataCategory,
-)
-from baseclasses.customreadable_identifier import ReadableIdentifiersCustom
-
-from nomad_material_processing.combinatorial import (
-    ThinFilmCombinatorialSample,
-    CombinatorialLibrary)
-from baseclasses.helper.add_solar_cell import add_solar_cell, add_band_gap
 
 m_package = SchemaPackage()
 
@@ -111,48 +102,51 @@ class UnoldLabCategory(EntryDataCategory):
 
 
 class UnoldSample(ThinFilmCombinatorialSample):
-    m_def = Section(
-        categories=[UnoldLabCategory])
+    m_def = Section(categories=[UnoldLabCategory])
 
     def normalize(self, archive, logger):
-        super(UnoldSample, self).normalize(archive, logger)
+        super().normalize(archive, logger)
         add_solar_cell(archive)
 
         if self.band_gap and self.band_gap.value:
             add_band_gap(archive, self.band_gap.value)
 
-        if self.photovoltaic and self.photovoltaic.efficiency and self.photovoltaic.efficiency.value:
-            archive.results.properties.optoelectronic.solar_cell.efficiency = self.photovoltaic.efficiency.value
+        if (
+            self.photovoltaic
+            and self.photovoltaic.efficiency
+            and self.photovoltaic.efficiency.value
+        ):
+            archive.results.properties.optoelectronic.solar_cell.efficiency = (
+                self.photovoltaic.efficiency.value
+            )
         if self.photovoltaic and self.photovoltaic.jsc and self.photovoltaic.jsc.value:
             archive.results.properties.optoelectronic.solar_cell.short_circuit_current_density = self.photovoltaic.jsc.value
         if self.photovoltaic and self.photovoltaic.voc and self.photovoltaic.voc.value:
             archive.results.properties.optoelectronic.solar_cell.open_circuit_voltage = self.photovoltaic.voc.value
         if self.photovoltaic and self.photovoltaic.ff and self.photovoltaic.ff.value:
-            archive.results.properties.optoelectronic.solar_cell.fill_factor = self.photovoltaic.ff.value
+            archive.results.properties.optoelectronic.solar_cell.fill_factor = (
+                self.photovoltaic.ff.value
+            )
 
 
 class UnoldLibrary(CombinatorialLibrary, EntryData):
     m_def = Section(
         categories=[UnoldLabCategory],
-        a_eln=dict(
-            hide=["users", "elemental_composition", "components"]))
+        a_eln=dict(hide=['users', 'elemental_composition', 'components']),
+    )
 
     qr_code = Quantity(
         type=str,
         a_eln=dict(component='FileEditQuantity'),
-        a_browser=dict(adaptor='RawFileAdaptor'))
-
-    grid_information = Quantity(
-        type=str,
-        a_eln=dict(component='StringEditQuantity')
+        a_browser=dict(adaptor='RawFileAdaptor'),
     )
 
-    library_id = SubSection(
-        section_def=ReadableIdentifiersCustom)
+    grid_information = Quantity(type=str, a_eln=dict(component='StringEditQuantity'))
+
+    library_id = SubSection(section_def=ReadableIdentifiersCustom)
 
     def normalize(self, archive, logger):
-        super(UnoldLibrary,
-              self).normalize(archive, logger)
+        super().normalize(archive, logger)
 
         with archive.m_context.raw_file(archive.metadata.mainfile) as f:
             path = os.path.dirname(f.name)
@@ -160,14 +154,17 @@ class UnoldLibrary(CombinatorialLibrary, EntryData):
         if self.lab_id:
             import qrcode
             from PIL import ImageDraw, ImageFont
+
             msg = f'{self.lab_id}#'
             img = qrcode.make(msg)
             Im = ImageDraw.Draw(img)
             root_dir = os.path.dirname(os.path.abspath(__file__))
-            fnt = ImageFont.truetype(os.path.join(root_dir, "fonts/OpenSans-VariableFont_wdth,wght.ttf"), 23)
+            fnt = ImageFont.truetype(
+                os.path.join(root_dir, 'fonts/OpenSans-VariableFont_wdth,wght.ttf'), 23
+            )
             # Add Text to an image
-            Im.text((5, 5), f"{self.lab_id}", font=fnt)
-            qr_file_name = f"{self.lab_id}.png"
+            Im.text((5, 5), f'{self.lab_id}', font=fnt)
+            qr_file_name = f'{self.lab_id}.png'
             img.save(os.path.join(path, qr_file_name), dpi=(2000, 2000))
             self.qr_code = qr_file_name
 
@@ -180,23 +177,43 @@ def load_XRF_txt(input_file):
     pos = [0]
     ns = False
     for i, c in enumerate(head[2]):
-        if c != " ":
+        if c != ' ':
             ns = True
-        if c == " " and ns and head[0][i] == " ":
+        if c == ' ' and ns and head[0][i] == ' ':
             pos.append(i)
             ns = False
     pos.append(-1)
     col = []
     c_old = ''
     for i in range(len(pos) - 1):
-        c1 = head[0][pos[i]:pos[i + 1]].strip() if head[0][pos[i]:pos[i + 1]].strip() else c_old
-        c2 = head[1][pos[i]:pos[i + 1]].strip()
+        c1 = (
+            head[0][pos[i] : pos[i + 1]].strip()
+            if head[0][pos[i] : pos[i + 1]].strip()
+            else c_old
+        )
+        c2 = head[1][pos[i] : pos[i + 1]].strip()
         col.append((c1, c2))
         c_old = c1
-    if "," in head[2]:
-        composition_data = pd.read_csv(input_file, names=col, header=None, skiprows=2, sep="\s{2,}", decimal=",", index_col=0)
+    if ',' in head[2]:
+        composition_data = pd.read_csv(
+            input_file,
+            names=col,
+            header=None,
+            skiprows=2,
+            sep='\s{2,}',
+            decimal=',',
+            index_col=0,
+        )
     else:
-        composition_data = pd.read_csv(input_file, names=col, header=None, skiprows=2, sep="\s{2,}", decimal=".", index_col=0)
+        composition_data = pd.read_csv(
+            input_file,
+            names=col,
+            header=None,
+            skiprows=2,
+            sep='\s{2,}',
+            decimal='.',
+            index_col=0,
+        )
 
     return composition_data
 
@@ -205,19 +222,24 @@ class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
     m_def = Section(
         label='Unold lab XRF Measurement Library',
         categories=[UnoldLabCategory],
-        a_eln=dict(hide=['instruments', 'steps', 'results', 'lab_id'],
-                   properties=dict(
-                       order=[
-                           "name",
-                       ]))
+        a_eln=dict(
+            hide=['instruments', 'steps', 'results', 'lab_id'],
+            properties=dict(
+                order=[
+                    'name',
+                ]
+            ),
+        ),
     )
 
     def normalize(self, archive, logger):
 
-        with archive.m_context.raw_file(archive.metadata.mainfile, "rt") as f:
+        with archive.m_context.raw_file(archive.metadata.mainfile, 'rt') as f:
             file_name = os.path.basename(f.name)
             if not self.samples:
-                set_sample_reference(archive, self, "_".join(file_name.split("_")[0:4]).strip("#"))
+                set_sample_reference(
+                    archive, self, '_'.join(file_name.split('_')[0:4]).strip('#')
+                )
 
         if self.samples and self.samples[0].lab_id:
             search_key = self.samples[0].lab_id
@@ -225,7 +247,7 @@ class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
             for item in archive.m_context.upload_files.raw_directory_list():
                 if archive.m_context.upload_files.raw_path_is_file(item.path):
                     continue
-                if not item.path.startswith(f"{search_key}"):
+                if not item.path.startswith(f'{search_key}'):
                     continue
                 self.data_folder = item.path
             # find images
@@ -233,99 +255,145 @@ class UnoldXRFMeasurementLibrary(XRFLibrary, EntryData):
             for item in archive.m_context.upload_files.raw_directory_list():
                 if archive.m_context.upload_files.raw_path_is_file(item.path):
                     continue
-                if not (item.path.startswith(f"{search_key}#") and item.path.endswith(".bmp")):
+                if not (
+                    item.path.startswith(f'{search_key}#')
+                    and item.path.endswith('.bmp')
+                ):
                     continue
                 images.append(item.path)
             self.images = images
-        if self.composition_file and self.data_folder and os.path.join(self.data_folder, "Messung.spx") in [ f.path for f in archive.m_context.upload_files.raw_directory_list(self.data_folder)]   :
+        if (
+            self.composition_file
+            and self.data_folder
+            and os.path.join(self.data_folder, 'Messung.spx')
+            in [
+                f.path
+                for f in archive.m_context.upload_files.raw_directory_list(
+                    self.data_folder
+                )
+            ]
+        ):
             file_path = self.composition_file
             try:
-                with archive.m_context.raw_file(file_path, "rt") as f:
-                   pass
+                with archive.m_context.raw_file(file_path, 'rt') as f:
+                    pass
             except:
                 file_path = os.path.join(self.data_folder, self.composition_file)
 
             measurements = []
 
-            from hzb_combinatorial_libraries.schema_packages.file_parser.xrf_spx_parser import read as xrf_read
-            files = [os.path.basename(file.path) for file in archive.m_context.upload_files.raw_directory_list(self.data_folder)
-                     if file.path.endswith(".spx") and not file.path.lower().endswith("messung.spx")]
+            from hzb_combinatorial_libraries.schema_packages.file_parser.xrf_spx_parser import (
+                read as xrf_read,
+            )
+
+            files = [
+                os.path.basename(file.path)
+                for file in archive.m_context.upload_files.raw_directory_list(
+                    self.data_folder
+                )
+                if file.path.endswith('.spx')
+                and not file.path.lower().endswith('messung.spx')
+            ]
             files.sort()
-            
-            with archive.m_context.raw_file(os.path.join(self.data_folder, "Messung.spx"), "rb") as f:
+
+            with archive.m_context.raw_file(
+                os.path.join(self.data_folder, 'Messung.spx'), 'rb'
+            ) as f:
                 _, energy, measurement_rows, positions_array, _, _ = xrf_read([f])
 
             self.datetime = convert_datetime(
-                measurement_rows[0]["DateTime"], datetime_format="%Y-%m-%dT%H:%M:%S.%f", utc=False)
+                measurement_rows[0]['DateTime'],
+                datetime_format='%Y-%m-%dT%H:%M:%S.%f',
+                utc=False,
+            )
             self.energy = energy
-            if file_path.endswith(".txt"):
-                with archive.m_context.raw_file(file_path, "rt") as f:
+            if file_path.endswith('.txt'):
+                with archive.m_context.raw_file(file_path, 'rt') as f:
                     composition_data = load_XRF_txt(f)
             else:
-                with archive.m_context.raw_file(file_path, "rb") as f:
+                with archive.m_context.raw_file(file_path, 'rb') as f:
                     composition_data = pd.read_excel(f, header=[0, 1], index_col=0)
-                    
+
             material_name = ''
             for i, file in enumerate(files):
-                with archive.m_context.raw_file(os.path.join(self.data_folder, file), "rb") as f:
+                with archive.m_context.raw_file(
+                    os.path.join(self.data_folder, file), 'rb'
+                ) as f:
                     _, _, _, ar, _, _ = xrf_read([f])
-                measurement_row = composition_data.loc[os.path.splitext(os.path.basename(file))[0]]
+                measurement_row = composition_data.loc[
+                    os.path.splitext(os.path.basename(file))[0]
+                ]
                 layer_data = {}
                 for v in measurement_row.items():
                     if v[0][0] not in layer_data:
                         layer_data.update({v[0][0]: {}})
-                    if "Thick" in v[0][1]:
-                        layer_data.update({v[0][0]: {"thickness": v[1]}})
+                    if 'Thick' in v[0][1]:
+                        layer_data.update({v[0][0]: {'thickness': v[1]}})
                         continue
-                    if "%" not in v[0][1]:
+                    if '%' not in v[0][1]:
                         continue
-                    if "composition" not in layer_data[v[0][0]]:
-                        layer_data[v[0][0]].update({"composition": []})
+                    if 'composition' not in layer_data[v[0][0]]:
+                        layer_data[v[0][0]].update({'composition': []})
                     if v[0][1] not in material_name:
-                        material_name += f"{v[0][0]}:{v[0][1]},"
-                    layer_data[v[0][0]]["composition"].append(XRFComposition(amount=v[1]))
+                        material_name += f'{v[0][0]}:{v[0][1]},'
+                    layer_data[v[0][0]]['composition'].append(
+                        XRFComposition(amount=v[1])
+                    )
                     # layer_data[v[0][0]]["composition"].append(XRFComposition(name=v[0][1], amount=v[1]))
 
                 layers = []
                 for key, layer in layer_data.items():
-                    layers.append(XRFLayer(
-                        layer=key,
-                        composition=layer.get("composition", None),
-                        thickness=layer.get("thickness", None)
-                    ))
+                    layers.append(
+                        XRFLayer(
+                            layer=key,
+                            composition=layer.get('composition', None),
+                            thickness=layer.get('thickness', None),
+                        )
+                    )
 
-                measurements.append(XRFSingleLibraryMeasurement(
-                    data_file=[os.path.basename(os.path.join(self.data_folder, files[i]))],
-                    position_x=positions_array[0][0] - ar[0][0],  # positions_array[0, i],
-                    position_y=positions_array[1][0] - ar[1][0],  # positions_array[1, i],
-                    layer=layers,
-                    name=f"{round(positions_array[0][0] - ar[0][0], 5)},{round(positions_array[1][0] - ar[1][0], 5)}")
+                measurements.append(
+                    XRFSingleLibraryMeasurement(
+                        data_file=[
+                            os.path.basename(os.path.join(self.data_folder, file))
+                        ],
+                        position_x=positions_array[0][0]
+                        - ar[0][0],  # positions_array[0, i],
+                        position_y=positions_array[1][0]
+                        - ar[1][0],  # positions_array[1, i],
+                        layer=layers,
+                        name=f'{round(positions_array[0][0] - ar[0][0], 5)},{round(positions_array[1][0] - ar[1][0], 5)}',
+                    )
                 )
             self.measurements = measurements
             self.material_names = material_name
-        super(UnoldXRFMeasurementLibrary, self).normalize(archive, logger)
+        super().normalize(archive, logger)
 
 
 class UnoldUVvisReflectionMeasurementLibrary(UVvisMeasurementLibrary, EntryData):
     m_def = Section(
         labels='Unold lab UVvis Reflection Measurement Library',
         categories=[UnoldLabCategory],
-        a_eln=dict(hide=['instruments', 'steps', 'results', 'lab_id'],
-                   properties=dict(
-                       order=[
-                           "name",
-                       ]))
+        a_eln=dict(
+            hide=['instruments', 'steps', 'results', 'lab_id'],
+            properties=dict(
+                order=[
+                    'name',
+                ]
+            ),
+        ),
     )
 
     def normalize(self, archive, logger):
 
-        key = "refl"
-        dark_key = "dark"
-        reference_key = "mirror"
+        key = 'refl'
+        dark_key = 'dark'
+        reference_key = 'mirror'
         with archive.m_context.raw_file(archive.metadata.mainfile) as f:
             file_name = os.path.basename(f.name)
             if not self.samples:
-                set_sample_reference(archive, self, "_".join(file_name.split("_")[0:4]).strip("#"))
+                set_sample_reference(
+                    archive, self, '_'.join(file_name.split('_')[0:4]).strip('#')
+                )
 
         if not self.reference_file:
             for file in archive.m_context.upload_files.raw_directory_list():
@@ -342,76 +410,101 @@ class UnoldUVvisReflectionMeasurementLibrary(UVvisMeasurementLibrary, EntryData)
         if self.data_file and self.reference_file and self.dark_file:
             measurements = []
 
-            from hzb_combinatorial_libraries.schema_packages.file_parser.uvvis_parser import read_uvvis
-            with archive.m_context.raw_file(self.data_file, "rt") as data_f, \
-                    archive.m_context.raw_file(self.reference_file, "rt") as ref_f,\
-                    archive.m_context.raw_file(self.dark_file, "rt") as dark_f: 
+            from hzb_combinatorial_libraries.schema_packages.file_parser.uvvis_parser import (
+                read_uvvis,
+            )
+
+            with (
+                archive.m_context.raw_file(self.data_file, 'rt') as data_f,
+                archive.m_context.raw_file(self.reference_file, 'rt') as ref_f,
+                archive.m_context.raw_file(self.dark_file, 'rt') as dark_f,
+            ):
                 md, df = read_uvvis(data_f, ref_f, dark_f)
-                
-            self.datetime = convert_datetime(md["Date_Time"], datetime_format="%Y_%m_%d_%H%M", utc=False)
+
+            self.datetime = convert_datetime(
+                md['Date_Time'], datetime_format='%Y_%m_%d_%H%M', utc=False
+            )
 
             if not self.samples:
-                set_sample_reference(archive, self, md["Sample_ID"].strip("#"))
+                set_sample_reference(archive, self, md['Sample_ID'].strip('#'))
             if self.properties is None:
-                self.properties = UVvisProperties(integration_time=md['integration time'].split(" ")[0].strip()
-                                                  * ureg(md['integration time'].split(" ")[1].strip()),
-                                                  spot_size=md['spot size'].split(" ")[0].strip()
-                                                  * ureg(md['spot size'].split(" ")[1].strip()))
+                self.properties = UVvisProperties(
+                    integration_time=md['integration time'].split(' ')[0].strip()
+                    * ureg(md['integration time'].split(' ')[1].strip()),
+                    spot_size=md['spot size'].split(' ')[0].strip()
+                    * ureg(md['spot size'].split(' ')[1].strip()),
+                )
             self.wavelength = [float(w) for w in df.columns[4:]]
             for i, row in df.iterrows():
                 data = UVvisDataSimple(intensity=row[df.columns[4:]])
 
-                measurements.append(UVvisSingleLibraryMeasurement(
-                    position_x=row["x"],
-                    position_y=row["y"],
-                    position_z=row["z"],
-                    data=data,
-                    name=f"{row['x']},{row['y']},{row['z']}"),
+                measurements.append(
+                    UVvisSingleLibraryMeasurement(
+                        position_x=row['x'],
+                        position_y=row['y'],
+                        position_z=row['z'],
+                        data=data,
+                        name=f'{row["x"]},{row["y"]},{row["z"]}',
+                    ),
                 )
             self.measurements = measurements
-        super(UnoldUVvisReflectionMeasurementLibrary, self).normalize(archive, logger)
+        super().normalize(archive, logger)
 
 
-class UnoldTRPLMeasurementLibrary(TimeResolvedPhotoluminescenceMeasurementLibrary, EntryData):
+class UnoldTRPLMeasurementLibrary(
+    TimeResolvedPhotoluminescenceMeasurementLibrary, EntryData
+):
     m_def = Section(
         labels='Unold lab TRPL Measurement Library',
         categories=[UnoldLabCategory],
-        a_eln=dict(hide=['instruments', 'steps', 'results', 'lab_id'],
-                   properties=dict(
-                       order=[
-                           "name",
-                       ]))
+        a_eln=dict(
+            hide=['instruments', 'steps', 'results', 'lab_id'],
+            properties=dict(
+                order=[
+                    'name',
+                ]
+            ),
+        ),
     )
 
     def normalize(self, archive, logger):
         with archive.m_context.raw_file(archive.metadata.mainfile) as f:
             file_name = os.path.basename(f.name)
             if not self.samples:
-                set_sample_reference(archive, self, "_".join(file_name.split("_")[0:4]).strip("#"))
+                set_sample_reference(
+                    archive, self, '_'.join(file_name.split('_')[0:4]).strip('#')
+                )
         if self.data_file:
-            import xarray as xr
             import tempfile
 
-            with archive.m_context.raw_file(self.data_file, "rb") as f:
+            import xarray as xr
+
+            with archive.m_context.raw_file(self.data_file, 'rb') as f:
                 file_content = f.read()
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".knc") as temp_file:
+                with tempfile.NamedTemporaryFile(
+                    delete=False, suffix='.knc'
+                ) as temp_file:
                     temp_file.write(file_content)
                     temp_file_path = temp_file.name
                 data = xr.load_dataset(temp_file_path)
             # self.time = data.trpl_t.values * ureg(data.trpl_t.units)
             self.properties = TRPLPropertiesBasic(
-                repetition_rate=data.trpl_repetition_rate.values * ureg(data.trpl_repetition_rate.units),
+                repetition_rate=data.trpl_repetition_rate.values
+                * ureg(data.trpl_repetition_rate.units),
                 laser_power=data.trpl_power.values * ureg(data.trpl_power.units),
-                excitation_peak_wavelength=data.trpl_excitation_wavelength.values *
-                ureg(data.trpl_excitation_wavelength.units),
-                detection_wavelength=data.trpl_detection_wavelength.values * ureg(data.trpl_detection_wavelength.units),
-                spotsize=data.trpl_counts.spot_size_um2 * ureg("um**2"),
+                excitation_peak_wavelength=data.trpl_excitation_wavelength.values
+                * ureg(data.trpl_excitation_wavelength.units),
+                detection_wavelength=data.trpl_detection_wavelength.values
+                * ureg(data.trpl_detection_wavelength.units),
+                spotsize=data.trpl_counts.spot_size_um2 * ureg('um**2'),
                 excitation_attenuation_filter=data.trpl_counts.attenuation,
-                integration_time=data.trpl_counts.integration_time_s * ureg("s")
-
+                integration_time=data.trpl_counts.integration_time_s * ureg('s'),
             )
-            self.datetime = convert_datetime(data.datetime.start_datetime,
-                                             datetime_format="%Y-%m-%dT%H:%M:%S.%f", utc=False)
+            self.datetime = convert_datetime(
+                data.datetime.start_datetime,
+                datetime_format='%Y-%m-%dT%H:%M:%S.%f',
+                utc=False,
+            )
             # measurements = []
 
             # for i, pos_x in enumerate(data.x.values):
@@ -426,29 +519,34 @@ class UnoldTRPLMeasurementLibrary(TimeResolvedPhotoluminescenceMeasurementLibrar
             #         )
             # self.measurements = measurements
 
-        super(UnoldTRPLMeasurementLibrary, self).normalize(archive, logger)
+        super().normalize(archive, logger)
 
 
 class UnoldUVvisTransmissionMeasurementLibrary(UVvisMeasurementLibrary, EntryData):
     m_def = Section(
         labels='Unold lab UVvis Transmission Measurement Library',
         categories=[UnoldLabCategory],
-        a_eln=dict(hide=['instruments', 'steps', 'results', 'lab_id'],
-                   properties=dict(
-                       order=[
-                           "name",
-                       ])),
+        a_eln=dict(
+            hide=['instruments', 'steps', 'results', 'lab_id'],
+            properties=dict(
+                order=[
+                    'name',
+                ]
+            ),
+        ),
     )
 
     def normalize(self, archive, logger):
 
-        key = "trans"
-        dark_key = "dark"
-        reference_key = "light"
+        key = 'trans'
+        dark_key = 'dark'
+        reference_key = 'light'
         with archive.m_context.raw_file(archive.metadata.mainfile) as f:
             file_name = os.path.basename(f.name)
             if not self.samples:
-                set_sample_reference(archive, self, "_".join(file_name.split("_")[0:4]).strip("#"))
+                set_sample_reference(
+                    archive, self, '_'.join(file_name.split('_')[0:4]).strip('#')
+                )
 
         if not self.reference_file:
             for file in archive.m_context.upload_files.raw_directory_list():
@@ -465,103 +563,135 @@ class UnoldUVvisTransmissionMeasurementLibrary(UVvisMeasurementLibrary, EntryDat
         if self.data_file and self.reference_file and self.dark_file:
             measurements = []
 
-            from hzb_combinatorial_libraries.schema_packages.file_parser.uvvis_parser import read_uvvis
-            with archive.m_context.raw_file(self.data_file, "rt") as data_f, \
-                    archive.m_context.raw_file(self.reference_file,"rt") as ref_f,\
-                    archive.m_context.raw_file(self.dark_file, "rt") as dark_f: 
+            from hzb_combinatorial_libraries.schema_packages.file_parser.uvvis_parser import (
+                read_uvvis,
+            )
+
+            with (
+                archive.m_context.raw_file(self.data_file, 'rt') as data_f,
+                archive.m_context.raw_file(self.reference_file, 'rt') as ref_f,
+                archive.m_context.raw_file(self.dark_file, 'rt') as dark_f,
+            ):
                 md, df = read_uvvis(data_f, ref_f, dark_f)
-            self.datetime = convert_datetime(md["Date_Time"], datetime_format="%Y_%m_%d_%H%M", utc=False)
+            self.datetime = convert_datetime(
+                md['Date_Time'], datetime_format='%Y_%m_%d_%H%M', utc=False
+            )
             if not self.samples:
-                set_sample_reference(archive, self, md["Sample_ID"].strip("#"))
+                set_sample_reference(archive, self, md['Sample_ID'].strip('#'))
             if self.properties is None:
-                self.properties = UVvisProperties(integration_time=md['integration time'].split(" ")[0].strip()
-                                                  * ureg(md['integration time'].split(" ")[1].strip()),
-                                                  spot_size=md['spot size'].split(" ")[0].strip()
-                                                  * ureg(md['spot size'].split(" ")[1].strip()))
+                self.properties = UVvisProperties(
+                    integration_time=md['integration time'].split(' ')[0].strip()
+                    * ureg(md['integration time'].split(' ')[1].strip()),
+                    spot_size=md['spot size'].split(' ')[0].strip()
+                    * ureg(md['spot size'].split(' ')[1].strip()),
+                )
             self.wavelength = [float(w) for w in df.columns[4:]]
             for i, row in df.iterrows():
                 data = UVvisDataSimple(intensity=row[df.columns[4:]])
 
-                measurements.append(UVvisSingleLibraryMeasurement(
-                    position_x=row["x"],
-                    position_y=row["y"],
-                    position_z=row["z"],
-                    data=data,
-                    name=f"{row['x']},{row['y']},{row['z']}"),
+                measurements.append(
+                    UVvisSingleLibraryMeasurement(
+                        position_x=row['x'],
+                        position_y=row['y'],
+                        position_z=row['z'],
+                        data=data,
+                        name=f'{row["x"]},{row["y"]},{row["z"]}',
+                    ),
                 )
             self.measurements = measurements
-        super(UnoldUVvisTransmissionMeasurementLibrary,
-              self).normalize(archive, logger)
+        super().normalize(archive, logger)
 
 
 class UnoldPLMeasurementLibrary(PLMeasurementLibrary, EntryData):
     m_def = Section(
         label='Unold lab PL Measurement Library',
         categories=[UnoldLabCategory],
-        a_eln=dict(hide=['instruments', 'steps', 'results', 'lab_id'],
-                   properties=dict(
-                       order=[
-                           "name",
-                       ])),
+        a_eln=dict(
+            hide=['instruments', 'steps', 'results', 'lab_id'],
+            properties=dict(
+                order=[
+                    'name',
+                ]
+            ),
+        ),
         a_plot=[
             {
-                'x': 'wavelength', 'y': 'measurements/:/data/intensity', 'layout': {
-                    'yaxis': {
-                        "fixedrange": False}, 'xaxis': {
-                        "fixedrange": False}}, "config": {
-                    "scrollZoom": True, 'staticPlot': False, }}]
+                'x': 'wavelength',
+                'y': 'measurements/:/data/intensity',
+                'layout': {
+                    'yaxis': {'fixedrange': False},
+                    'xaxis': {'fixedrange': False},
+                },
+                'config': {
+                    'scrollZoom': True,
+                    'staticPlot': False,
+                },
+            }
+        ],
     )
 
     def normalize(self, archive, logger):
         with archive.m_context.raw_file(archive.metadata.mainfile) as f:
             file_name = os.path.basename(f.name)
             if not self.samples:
-                set_sample_reference(archive, self, "_".join(file_name.split("_")[0:4]).strip("#"))
+                set_sample_reference(
+                    archive, self, '_'.join(file_name.split('_')[0:4]).strip('#')
+                )
         if self.data_file:
             measurements = []
 
-            from hzb_combinatorial_libraries.schema_packages.file_parser.pl_parser import read_file_pl_unold
-            with archive.m_context.raw_file(self.data_file, "rt") as f:
+            from hzb_combinatorial_libraries.schema_packages.file_parser.pl_parser import (
+                read_file_pl_unold,
+            )
+
+            with archive.m_context.raw_file(self.data_file, 'rt') as f:
                 md, df = read_file_pl_unold(f)
-            self.datetime = convert_datetime(md["Date_Time"], datetime_format="%Y_%m_%d_%H%M", utc=False)
+            self.datetime = convert_datetime(
+                md['Date_Time'], datetime_format='%Y_%m_%d_%H%M', utc=False
+            )
             if not self.samples:
-                set_sample_reference(archive, self, md["Sample_ID"].strip("#"))
+                set_sample_reference(archive, self, md['Sample_ID'].strip('#'))
             if self.properties is None:
-                self.properties = PLPropertiesLibrary(integration_time=float(md['integration time'].split(" ")[0].strip())
-                                                      * ureg(
-                    md['integration time'].split(" ")[1].strip()),
-                    spot_size=float(md['spot size'].split(" ")[0].strip()),
+                self.properties = PLPropertiesLibrary(
+                    integration_time=float(md['integration time'].split(' ')[0].strip())
+                    * ureg(md['integration time'].split(' ')[1].strip()),
+                    spot_size=float(md['spot size'].split(' ')[0].strip()),
                     # * ureg(md['spot size'].split(" ")[1].strip()),
-                    long_pass_filter=float(md['long pass filter'].split(" ")[0].strip())
-                    * ureg(md['long pass filter'].split(" ")[1].strip()),
-                    laser_wavelength=float(md['laser wavelength'].split(" ")[0].strip())
-                    * ureg(md['laser wavelength'].split(" ")[1].strip()))
+                    long_pass_filter=float(md['long pass filter'].split(' ')[0].strip())
+                    * ureg(md['long pass filter'].split(' ')[1].strip()),
+                    laser_wavelength=float(md['laser wavelength'].split(' ')[0].strip())
+                    * ureg(md['laser wavelength'].split(' ')[1].strip()),
+                )
             self.wavelength = [float(w) for w in df.columns[6:]]
             for i, row in df.iterrows():
                 data = PLDataSimple(intensity=row[df.columns[6:]])
 
-                measurements.append(PLSingleLibraryMeasurement(
-                    position_x=row["x"],
-                    position_y=row["y"],
-                    position_z=row["z"],
-                    data=data,
-                    name=f"{row['x']},{row['y']},{row['z']}"),
+                measurements.append(
+                    PLSingleLibraryMeasurement(
+                        position_x=row['x'],
+                        position_y=row['y'],
+                        position_z=row['z'],
+                        data=data,
+                        name=f'{row["x"]},{row["y"]},{row["z"]}',
+                    ),
                 )
             self.measurements = measurements
 
-        super(UnoldPLMeasurementLibrary,
-              self).normalize(archive, logger)
+        super().normalize(archive, logger)
 
 
 class UnoldConductivityMeasurementLibrary(ConductivityMeasurementLibrary, EntryData):
     m_def = Section(
         label='Unold lab Conductivity Measurement Library',
         categories=[UnoldLabCategory],
-        a_eln=dict(hide=['instruments', 'steps', 'results', 'lab_id'],
-                   properties=dict(
-                       order=[
-                           "name",
-                       ])),
+        a_eln=dict(
+            hide=['instruments', 'steps', 'results', 'lab_id'],
+            properties=dict(
+                order=[
+                    'name',
+                ]
+            ),
+        ),
     )
 
     def normalize(self, archive, logger):
@@ -569,45 +699,60 @@ class UnoldConductivityMeasurementLibrary(ConductivityMeasurementLibrary, EntryD
         with archive.m_context.raw_file(archive.metadata.mainfile) as f:
             file_name = os.path.basename(f.name)
             if not self.samples:
-                set_sample_reference(archive, self, "_".join(file_name.split("_")[0:4]).strip("#"))
+                set_sample_reference(
+                    archive, self, '_'.join(file_name.split('_')[0:4]).strip('#')
+                )
 
         if self.data_file:
             measurements = []
 
-            from hzb_combinatorial_libraries.schema_packages.file_parser.conductivity_parser import read_conductivity
-            with archive.m_context.raw_file(self.data_file, "rt") as f:
+            from hzb_combinatorial_libraries.schema_packages.file_parser.conductivity_parser import (
+                read_conductivity,
+            )
+
+            with archive.m_context.raw_file(self.data_file, 'rt') as f:
                 md, df = read_conductivity(f)
-            self.datetime = convert_datetime(md["Date_Time"], datetime_format="%Y_%m_%d_%H%M", utc=False)
+            self.datetime = convert_datetime(
+                md['Date_Time'], datetime_format='%Y_%m_%d_%H%M', utc=False
+            )
             if not self.samples:
-                set_sample_reference(archive, self, md["Sample_ID"].strip("#"))
+                set_sample_reference(archive, self, md['Sample_ID'].strip('#'))
             if self.properties is None:
-                print(float(md['integration_time'].split(" ")[0].strip()), md['integration_time'].split(" ")[1].strip())
-                print(float(md['Configuration'].split(" ")[0].strip()), md['Configuration'].split(" ")[1].strip())
+                print(
+                    float(md['integration_time'].split(' ')[0].strip()),
+                    md['integration_time'].split(' ')[1].strip(),
+                )
+                print(
+                    float(md['Configuration'].split(' ')[0].strip()),
+                    md['Configuration'].split(' ')[1].strip(),
+                )
                 self.properties = ConductivityProperties(
-                    integration_time=float(md['integration_time'].split(" ")[0].strip())
-                    * ureg(md['integration_time'].split(" ")[1].strip()),
-                    configuration=float(md['Configuration'].split(" ")[0].strip())
-                    * ureg(md['Configuration'].split(" ")[1].strip()))
+                    integration_time=float(md['integration_time'].split(' ')[0].strip())
+                    * ureg(md['integration_time'].split(' ')[1].strip()),
+                    configuration=float(md['Configuration'].split(' ')[0].strip())
+                    * ureg(md['Configuration'].split(' ')[1].strip()),
+                )
 
             for i, row in df.iterrows():
-                measurements.append(ConductivitySingleLibraryMeasurement(
-                    position_x=row["x"],
-                    position_y=row["y"],
-                    position_z=row["z"],
-                    conductivity=row["resistance"] * ureg("Gohm"),
-                    name=f"{row['x']},{row['y']},{row['z']}"),
+                measurements.append(
+                    ConductivitySingleLibraryMeasurement(
+                        position_x=row['x'],
+                        position_y=row['y'],
+                        position_z=row['z'],
+                        conductivity=row['resistance'] * ureg('Gohm'),
+                        name=f'{row["x"]},{row["y"]},{row["z"]}',
+                    ),
                 )
             self.measurements = measurements
 
-        super(UnoldConductivityMeasurementLibrary,
-              self).normalize(archive, logger)
+        super().normalize(archive, logger)
 
 
 default_source_mapping = {
-    "PbI2": 1,
-    "CsI": 2,
-    "CsBr": 3,
-    "SnI2": 5,
+    'PbI2': 1,
+    'CsI': 2,
+    'CsBr': 3,
+    'SnI2': 5,
 }
 
 
@@ -618,26 +763,26 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
 
     m_def = Section(
         categories=[UnoldLabCategory],
-        label="Thermal Evaporation Process",
-        links=["http://purl.obolibrary.org/obo/CHMO_0001360"],
+        label='Thermal Evaporation Process',
+        links=['http://purl.obolibrary.org/obo/CHMO_0001360'],
         a_plot=[
             dict(
-                label="Impinging flux",
-                x="steps/:/sources/:/impinging_flux/:/time",
-                y="steps/:/sources/:/impinging_flux/:/value",
+                label='Impinging flux',
+                x='steps/:/sources/:/impinging_flux/:/time',
+                y='steps/:/sources/:/impinging_flux/:/value',
             ),
             dict(
-                label="Temperature",
-                x="steps/:/sources/:/vapor_source/temperature/time",
-                y="steps/:/sources/:/vapor_source/temperature/value",
+                label='Temperature',
+                x='steps/:/sources/:/vapor_source/temperature/time',
+                y='steps/:/sources/:/vapor_source/temperature/value',
             ),
             dict(
-                label="Pressure",
-                x="steps/:/environment/pressure/time",
-                y="steps/:/environment/pressure/value",
+                label='Pressure',
+                x='steps/:/environment/pressure/time',
+                y='steps/:/environment/pressure/value',
                 layout=dict(
                     yaxis=dict(
-                        type="log",
+                        type='log',
                     ),
                 ),
             ),
@@ -648,12 +793,12 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
         description="""
         The log file generated by the PVD software.
         """,
-        a_browser=BrowserAnnotation(adaptor="RawFileAdaptor"),
-        a_eln=ELNAnnotation(component="FileEditQuantity"),
+        a_browser=BrowserAnnotation(adaptor='RawFileAdaptor'),
+        a_eln=ELNAnnotation(component='FileEditQuantity'),
     )
 
     def normalize(self, archive, logger: BoundLogger) -> None:
-        '''
+        """
         The normalizer for the `HZBUnoldLabThermalEvaporation` class. Will generate and
         fill the `steps` attribute using the `log_file`.
 
@@ -661,62 +806,64 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
             archive (EntryArchive): The archive containing the section that is being
             normalized.
             logger (BoundLogger): A structlog logger.
-        '''
+        """
         with archive.m_context.raw_file(archive.metadata.mainfile) as f:
             path = os.path.dirname(f.name)
             file_name = os.path.basename(f.name)
             if not self.samples:
-                set_sample_reference(archive, self, "_".join(file_name.split("_")[0:4]).strip("#"))
+                set_sample_reference(
+                    archive, self, '_'.join(file_name.split('_')[0:4]).strip('#')
+                )
         if self.log_file:
-            import pandas as pd
             import numpy as np
+            import pandas as pd
 
-            with archive.m_context.raw_file(self.log_file, "rt") as fh:
+            with archive.m_context.raw_file(self.log_file, 'rt') as fh:
                 line = fh.readline().strip()
                 metadata = {}
-                while line.startswith("#"):
-                    if ":" in line:
-                        key = line.split(":")[0][1:].strip()
-                        value = str.join(":", line.split(":")[1:]).strip()
+                while line.startswith('#'):
+                    if ':' in line:
+                        key = line.split(':')[0][1:].strip()
+                        value = str.join(':', line.split(':')[1:]).strip()
                         metadata[key] = value
                     line = fh.readline().strip()
-                df = pd.read_csv(fh, sep="\t")
-                if (df["Process Time in seconds"] == 0).all():
-                    df["Process Time in seconds"] = np.arange(df.shape[0])
+                df = pd.read_csv(fh, sep='\t')
+                if (df['Process Time in seconds'] == 0).all():
+                    df['Process Time in seconds'] = np.arange(df.shape[0])
             self.datetime = datetime.datetime.strptime(
                 f'{metadata["Date"]}T{df["Time"].values[0]}',
-                r"%Y/%m/%dT%H:%M:%S",
+                r'%Y/%m/%dT%H:%M:%S',
             )
             self.end_time = datetime.datetime.strptime(
                 f'{metadata["Date"]}T{df["Time"].values[-1]}',
-                r"%Y/%m/%dT%H:%M:%S",
+                r'%Y/%m/%dT%H:%M:%S',
             )
             self.name = f'PVD-{metadata["process ID"]}'
-            self.location = "Berlin, Germany"
+            self.location = 'Berlin, Germany'
             self.lab_id = f'HZB_{metadata["operator"]}_{self.datetime.strftime(r"%Y%m%d")}_PVD-{metadata["process ID"]}'
 
             source_materials = {
                 column[0]: column.split()[2]
                 for column in df.columns
-                if column[-1:] == "T"
+                if column[-1:] == 'T'
             }
 
-            qcms = ["QCM1_1", "QCM1_2", "QCM2_1", "QCM2_2"]
+            qcms = ['QCM1_1', 'QCM1_2', 'QCM2_1', 'QCM2_2']
             qcms_source_number = {
-                df[qcm[:-2] + " FILMNAM" + qcm[-2:]].values[0]: qcm for qcm in qcms
+                df[qcm[:-2] + ' FILMNAM' + qcm[-2:]].values[0]: qcm for qcm in qcms
             }
             try:
                 qcms_ordered = [
-                    qcms_source_number[default_source_mapping[material]] for source, material in
-                    source_materials.items()
+                    qcms_source_number[default_source_mapping[material]]
+                    for source, material in source_materials.items()
                 ]
             except KeyError:
-                raise ValueError("Film names do not match source names.")
-            shutters = [f"{qcm[:-2]} SHTSRC{qcm[-2:]}" for qcm in qcms_ordered]
+                raise ValueError('Film names do not match source names.')
+            shutters = [f'{qcm[:-2]} SHTSRC{qcm[-2:]}' for qcm in qcms_ordered]
             start_times = []
             for shutter in shutters:
                 switch_times = df.loc[
-                    df[shutter].diff() != 0, "Process Time in seconds"
+                    df[shutter].diff() != 0, 'Process Time in seconds'
                 ].values
                 for time in switch_times:
                     if not any(abs(t - time) < 5 for t in start_times):
@@ -726,28 +873,28 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
             depositions = 0
             for idx, time in enumerate(start_times[:-1]):
                 step = df.loc[
-                    (time <= df["Process Time in seconds"])
-                    & (df["Process Time in seconds"] < start_times[idx + 1])
+                    (time <= df['Process Time in seconds'])
+                    & (df['Process Time in seconds'] < start_times[idx + 1])
                 ]
 
                 if step.loc[:, shutters].mode().any().any():
                     depositions += 1
-                    name = f"deposition {depositions}"
+                    name = f'deposition {depositions}'
                 elif idx == 0:
-                    name = "pre"
+                    name = 'pre'
                 else:
-                    name = "post"
+                    name = 'post'
                 sources = []
                 for source_nr in source_materials:
-                    source = f"{source_nr} - {source_materials[source_nr]}"
+                    source = f'{source_nr} - {source_materials[source_nr]}'
                     vapour_source = ThermalEvaporationHeater(
                         temperature=ThermalEvaporationHeaterTemperature(
-                            value=step[f"{source} T"] + 273.15,
-                            time=step["Process Time in seconds"],
+                            value=step[f'{source} T'] + 273.15,
+                            time=step['Process Time in seconds'],
                         ),
                         power=SourcePower(
-                            value=step[f"{source} Aout"],
-                            time=step["Process Time in seconds"],
+                            value=step[f'{source} Aout'],
+                            time=step['Process Time in seconds'],
                         ),
                     )
                     material = [
@@ -758,11 +905,11 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
                         )
                     ]
                     impinging_flux = ImpingingFlux(
-                        value=1e-6 * step[f"{source} PV"],
-                        set_value=1e-6 * step[f"{source} TSP"],
-                        time=step["Process Time in seconds"],
-                        set_time=step["Process Time in seconds"],
-                        measurement_type="Quartz Crystal Microbalance",
+                        value=1e-6 * step[f'{source} PV'],
+                        set_value=1e-6 * step[f'{source} TSP'],
+                        time=step['Process Time in seconds'],
+                        set_time=step['Process Time in seconds'],
+                        measurement_type='Quartz Crystal Microbalance',
                     )
                     thermal_evaporation_source = ThermalEvaporationSource(
                         name=source_materials[source_nr],
@@ -774,13 +921,13 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
                 substrate = PVDSampleParameters(
                     substrate=None,  # TODO: Add substrate
                     substrate_temperature=Temperature(
-                        value=step["Substrate PV"] + 273.15,
-                        set_value=step["Substrate TSP"] + 273.15,
-                        time=step["Process Time in seconds"],
-                        set_time=step["Process Time in seconds"],
-                        measurement_type="Heater thermocouple",
+                        value=step['Substrate PV'] + 273.15,
+                        set_value=step['Substrate TSP'] + 273.15,
+                        time=step['Process Time in seconds'],
+                        set_time=step['Process Time in seconds'],
+                        measurement_type='Heater thermocouple',
                     ),
-                    heater="Resistive element",
+                    heater='Resistive element',
                     distance_to_source=[
                         np.linalg.norm(np.array((41.54e-3, 26.06e-3, 201.12e-3)))
                     ]
@@ -788,8 +935,8 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
                 )
                 environment = ChamberEnvironment(
                     pressure=Pressure(
-                        value=step["Vacuum Pressure2"] * 1e2,
-                        time=step["Process Time in seconds"],
+                        value=step['Vacuum Pressure2'] * 1e2,
+                        time=step['Process Time in seconds'],
                     ),
                 )
                 step = ThermalEvaporationStep(
@@ -803,14 +950,11 @@ class UnoldThermalEvaporation(ThermalEvaporation, EntryData):
                 steps.append(step)
             self.steps = steps
 
-        super(UnoldThermalEvaporation, self).normalize(archive, logger)
+        super().normalize(archive, logger)
 
 
 class PixelProperty(EntryData):
-    m_def = Section(
-        categories=[UnoldLabCategory],
-        label='UnoldPixelProperty'
-    )
+    m_def = Section(categories=[UnoldLabCategory], label='UnoldPixelProperty')
     thickness = Quantity(
         type=np.dtype(np.float64),
         unit='cm',
@@ -821,7 +965,7 @@ class PixelProperty(EntryData):
         a_eln=dict(
             component='NumberEditQuantity',
             defaultDisplayUnit='mm',
-        )
+        ),
     )
     conductivity = Quantity(
         type=np.dtype(np.float64),
@@ -833,7 +977,7 @@ class PixelProperty(EntryData):
         a_eln=dict(
             component='NumberEditQuantity',
             defaultDisplayUnit='S/cm',
-        )
+        ),
     )
     bandgap = Quantity(
         type=np.dtype(np.float64),
@@ -842,13 +986,13 @@ class PixelProperty(EntryData):
         a_eln=dict(
             component='NumberEditQuantity',
             defaultDisplayUnit='eV',
-        )
+        ),
     )
 
     PLQY = Quantity(
         type=np.dtype(np.float64),
         description='Energy integrated value of the PL spectrum.',
-        a_eln=dict(component='NumberEditQuantity')
+        a_eln=dict(component='NumberEditQuantity'),
     )
 
     implied_voc = Quantity(
@@ -858,17 +1002,14 @@ class PixelProperty(EntryData):
         a_eln=dict(
             component='NumberEditQuantity',
             defaultDisplayUnit='eV',
-        )
+        ),
     )
 
     FWHM = Quantity(
         type=np.dtype(np.float64),
         unit='eV',
         description='FWHM based on PL measurements.',
-        a_eln=dict(
-            component='NumberEditQuantity',
-            defaultDisplayUnit='eV'
-        )
+        a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='eV'),
     )
 
 
