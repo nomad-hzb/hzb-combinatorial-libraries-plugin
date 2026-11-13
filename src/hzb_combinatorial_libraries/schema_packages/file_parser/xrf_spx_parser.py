@@ -1,10 +1,7 @@
-from typing import List, Dict, Any, Tuple
-from xarray import Dataset
 import base64
-import xml.etree.ElementTree as ElTree
 import struct
-from datetime import datetime
 import tempfile
+import xml.etree.ElementTree as ElTree
 
 # from kExceptions import KameleontImportError
 # from kXarrayMethods import make_dimension_array, make_data_array, make_dataset
@@ -14,21 +11,133 @@ import tempfile
 import numpy as np
 import pandas as pd
 
-
-periodic_table_list = ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl',
-                       'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As',
-                       'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd',
-                       'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu',
-                       'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt',
-                       'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn', 'Fr', 'Ra', 'Ac', 'Th', 'Pa', 'U', 'Np',
-                       'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr', 'Rf', 'Db', 'Sg', 'Bh', 'Hs',
-                       'Mt', 'Ds', 'Rg', 'Cn', 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og']
+periodic_table_list = [
+    'H',
+    'He',
+    'Li',
+    'Be',
+    'B',
+    'C',
+    'N',
+    'O',
+    'F',
+    'Ne',
+    'Na',
+    'Mg',
+    'Al',
+    'Si',
+    'P',
+    'S',
+    'Cl',
+    'Ar',
+    'K',
+    'Ca',
+    'Sc',
+    'Ti',
+    'V',
+    'Cr',
+    'Mn',
+    'Fe',
+    'Co',
+    'Ni',
+    'Cu',
+    'Zn',
+    'Ga',
+    'Ge',
+    'As',
+    'Se',
+    'Br',
+    'Kr',
+    'Rb',
+    'Sr',
+    'Y',
+    'Zr',
+    'Nb',
+    'Mo',
+    'Tc',
+    'Ru',
+    'Rh',
+    'Pd',
+    'Ag',
+    'Cd',
+    'In',
+    'Sn',
+    'Sb',
+    'Te',
+    'I',
+    'Xe',
+    'Cs',
+    'Ba',
+    'La',
+    'Ce',
+    'Pr',
+    'Nd',
+    'Pm',
+    'Sm',
+    'Eu',
+    'Gd',
+    'Tb',
+    'Dy',
+    'Ho',
+    'Er',
+    'Tm',
+    'Yb',
+    'Lu',
+    'Hf',
+    'Ta',
+    'W',
+    'Re',
+    'Os',
+    'Ir',
+    'Pt',
+    'Au',
+    'Hg',
+    'Tl',
+    'Pb',
+    'Bi',
+    'Po',
+    'At',
+    'Rn',
+    'Fr',
+    'Ra',
+    'Ac',
+    'Th',
+    'Pa',
+    'U',
+    'Np',
+    'Pu',
+    'Am',
+    'Cm',
+    'Bk',
+    'Cf',
+    'Es',
+    'Fm',
+    'Md',
+    'No',
+    'Lr',
+    'Rf',
+    'Db',
+    'Sg',
+    'Bh',
+    'Hs',
+    'Mt',
+    'Ds',
+    'Rg',
+    'Cn',
+    'Nh',
+    'Fl',
+    'Mc',
+    'Lv',
+    'Ts',
+    'Og',
+]
 periodic_table_dict = {
-    element_index + 1: element_name for element_index, element_name in enumerate(periodic_table_list)
+    element_index + 1: element_name
+    for element_index, element_name in enumerate(periodic_table_list)
 }
 
 
-def get_spectrum_hardware_params(data_root: ElTree.Element) -> Dict:
+def get_spectrum_hardware_params(data_root: ElTree.Element) -> dict:
     """
     Method that walks the XML tree from the given root and finds the information for the hardware parameters
     that were stored in the spx file. Returns the found values as a dict.
@@ -40,21 +149,43 @@ def get_spectrum_hardware_params(data_root: ElTree.Element) -> Dict:
     """
     spectrum_hardware_params_dict = {}
 
-    search_str = "./ClassInstance/[@Type='TRTSpectrum']" \
-                 "/TRTHeaderedClass" \
-                 "/ClassInstance/[@Type='TRTSpectrumHardwareHeader']"
+    search_str = (
+        "./ClassInstance/[@Type='TRTSpectrum']"
+        '/TRTHeaderedClass'
+        "/ClassInstance/[@Type='TRTSpectrumHardwareHeader']"
+    )
     spectrum_node = data_root.find(search_str)
 
-    spectrum_hardware_params_dict['RealTime'] = float(spectrum_node.find('RealTime').text)
-    spectrum_hardware_params_dict['LifeTime'] = float(spectrum_node.find('LifeTime').text)
-    spectrum_hardware_params_dict['DeadTime'] = float(spectrum_node.find('DeadTime').text)
-    spectrum_hardware_params_dict['ZeroPeakPosition'] = int(spectrum_node.find('ZeroPeakPosition').text)
-    spectrum_hardware_params_dict['ZeroPeakFrequency'] = int(spectrum_node.find('ZeroPeakFrequency').text)
-    spectrum_hardware_params_dict['PulseDensity'] = int(spectrum_node.find('PulseDensity').text)
-    spectrum_hardware_params_dict['Amplification'] = int(float(spectrum_node.find('Amplification').text))
-    spectrum_hardware_params_dict['ShapingTime'] = int(spectrum_node.find('ShapingTime').text)
-    spectrum_hardware_params_dict['DetectorCount'] = int(spectrum_node.find('DetectorCount').text)
-    spectrum_hardware_params_dict['SelectedDetectors'] = spectrum_node.find('SelectedDetectors').text
+    spectrum_hardware_params_dict['RealTime'] = float(
+        spectrum_node.find('RealTime').text
+    )
+    spectrum_hardware_params_dict['LifeTime'] = float(
+        spectrum_node.find('LifeTime').text
+    )
+    spectrum_hardware_params_dict['DeadTime'] = float(
+        spectrum_node.find('DeadTime').text
+    )
+    spectrum_hardware_params_dict['ZeroPeakPosition'] = int(
+        spectrum_node.find('ZeroPeakPosition').text
+    )
+    spectrum_hardware_params_dict['ZeroPeakFrequency'] = int(
+        spectrum_node.find('ZeroPeakFrequency').text
+    )
+    spectrum_hardware_params_dict['PulseDensity'] = int(
+        spectrum_node.find('PulseDensity').text
+    )
+    spectrum_hardware_params_dict['Amplification'] = int(
+        float(spectrum_node.find('Amplification').text)
+    )
+    spectrum_hardware_params_dict['ShapingTime'] = int(
+        spectrum_node.find('ShapingTime').text
+    )
+    spectrum_hardware_params_dict['DetectorCount'] = int(
+        spectrum_node.find('DetectorCount').text
+    )
+    spectrum_hardware_params_dict['SelectedDetectors'] = spectrum_node.find(
+        'SelectedDetectors'
+    ).text
     return spectrum_hardware_params_dict
 
 
@@ -77,27 +208,35 @@ def get_position(data_root: ElTree.Element) -> np.array:
     """
 
     position_list = []
-    search_str = "./ClassInstance/[@Type='TRTSpectrum']" \
-                 "/TRTHeaderedClass" \
-                 "/ClassInstance/[@Type='TRTAxesHeader']" \
-                 "/AxesParameter/"
-    if len(data_root.findall(search_str)) > 0:  # if positions are explicitly supplied in spx file
+    search_str = (
+        "./ClassInstance/[@Type='TRTSpectrum']"
+        '/TRTHeaderedClass'
+        "/ClassInstance/[@Type='TRTAxesHeader']"
+        '/AxesParameter/'
+    )
+    if (
+        len(data_root.findall(search_str)) > 0
+    ):  # if positions are explicitly supplied in spx file
         for elem in data_root.findall(search_str):
             position_list.append(float(elem.attrib['AxisPosition']))
         return np.array(position_list)
     else:  # not supplied explicitly. Change searchstring and decode it
-        search_str = "./ClassInstance/[@Type='TRTSpectrum']" \
-                     "/TRTHeaderedClass" \
-                     "/ClassInstance/[@Type='TRTUnknownHeader']/[@Name='RTREM']" \
-                     "/Data"
+        search_str = (
+            "./ClassInstance/[@Type='TRTSpectrum']"
+            '/TRTHeaderedClass'
+            "/ClassInstance/[@Type='TRTUnknownHeader']/[@Name='RTREM']"
+            '/Data'
+        )
         position_elem = data_root.find(search_str)
         # decode data into a string. Positions within the string are found experimentally
-        position_string = base64.b64decode(position_elem.text.encode('ASCII'))[121:121 + 24]
-        positions = np.array(struct.unpack('<ddd', position_string)).astype("float")
+        position_string = base64.b64decode(position_elem.text.encode('ASCII'))[
+            121 : 121 + 24
+        ]
+        positions = np.array(struct.unpack('<ddd', position_string)).astype('float')
         return positions
 
 
-def create_grid(in_array: np.array) -> Tuple[List, bool]:
+def create_grid(in_array: np.array) -> tuple[list, bool]:
     """
     Method that generate a grid with x-positions and y-positions from a 2D-array of all positions, at which
     measurements were taken. (Input contains a list of all "pairs" of absolute x- and y-positions; number of
@@ -133,17 +272,23 @@ def create_grid(in_array: np.array) -> Tuple[List, bool]:
         """
         step_precision = 0.03
         # get step size precisely
-        small_step_idxs = ((p_diff_array > (1 - step_precision) * step_rough)
-                           & (p_diff_array < (1 + step_precision) * step_rough))
+        small_step_idxs = (p_diff_array > (1 - step_precision) * step_rough) & (
+            p_diff_array < (1 + step_precision) * step_rough
+        )
         step_posis = np.where(small_step_idxs)[0]
         step_aver = np.mean(p_diff_array[step_posis])
 
         if len(p_diff_array) > len(step_posis):
             # get number of points per line
-            restart_line_step = np.median(np.delete(p_diff_array, step_posis))  # second most often diffs
-            restart_line_idxs = ((p_diff_array > (1 - step_precision) * restart_line_step)
-                                 & (p_diff_array < (1 + step_precision) * restart_line_step))
-            restart_line_posis_ori = np.where(restart_line_idxs)[0]  # posi of the line restart in original array
+            restart_line_step = np.median(
+                np.delete(p_diff_array, step_posis)
+            )  # second most often diffs
+            restart_line_idxs = (
+                p_diff_array > (1 - step_precision) * restart_line_step
+            ) & (p_diff_array < (1 + step_precision) * restart_line_step)
+            restart_line_posis_ori = np.where(restart_line_idxs)[
+                0
+            ]  # posi of the line restart in original array
 
             if np.std(np.diff(p_diff_array[restart_line_posis_ori])) < epsilon:
                 spots_per_line = int(np.mean(np.diff(restart_line_posis_ori)))
@@ -171,14 +316,20 @@ def create_grid(in_array: np.array) -> Tuple[List, bool]:
         :rtype: np.array
         """
         # remove 0 size "steps"
-        non_move_posis = np.where((p_diff_array > -1 * epsilon) & (p_diff_array < epsilon))[0]
+        non_move_posis = np.where(
+            (p_diff_array > -1 * epsilon) & (p_diff_array < epsilon)
+        )[0]
         p_diff_array = np.delete(p_diff_array, non_move_posis)
-        if len(p_diff_array) == 0:  # there is no move being done. Measurement is one line/column
+        if (
+            len(p_diff_array) == 0
+        ):  # there is no move being done. Measurement is one line/column
             return np.zeros(1)
         else:
             # get step size rougly first, then precise
             step_rough = np.median(p_diff_array)
-            step_posis = np.where((p_diff_array > 0.9 * step_rough) & (p_diff_array < 1.1 * step_rough))[0]
+            step_posis = np.where(
+                (p_diff_array > 0.9 * step_rough) & (p_diff_array < 1.1 * step_rough)
+            )[0]
             step_aver = np.mean(p_diff_array[step_posis])
             no_lines = len(step_posis) + 1
             return np.linspace(0, step_aver * (no_lines - 1), no_lines)
@@ -201,7 +352,7 @@ def create_grid(in_array: np.array) -> Tuple[List, bool]:
     return [x_array, y_array], x_first
 
 
-def get_system_settings(data_root: ElTree.Element) -> Dict:
+def get_system_settings(data_root: ElTree.Element) -> dict:
     """
     Method that walks the XML tree from the given root and finds the information for the system settings
     that were stored in the spx file. Returns the found values as a dict.
@@ -214,9 +365,11 @@ def get_system_settings(data_root: ElTree.Element) -> Dict:
 
     system_settings_dict = {}
 
-    search_str = "./ClassInstance/[@Type='TRTSpectrum']" \
-                 "/TRTHeaderedClass" \
-                 "/ClassInstance/[@Type='TRTXrfHeader']"
+    search_str = (
+        "./ClassInstance/[@Type='TRTSpectrum']"
+        '/TRTHeaderedClass'
+        "/ClassInstance/[@Type='TRTXrfHeader']"
+    )
     xrf_node = data_root.find(search_str)
 
     system_settings_dict['TubeType'] = xrf_node.find('TubeType').text
@@ -225,29 +378,45 @@ def get_system_settings(data_root: ElTree.Element) -> Dict:
     system_settings_dict['Voltage'] = int(xrf_node.find('Voltage').text)
     system_settings_dict['Current'] = int(xrf_node.find('Current').text)
     system_settings_dict['Anode'] = int(xrf_node.find('Anode').text)
-    system_settings_dict['TubeIncidentAngle'] = float(xrf_node.find('TubeIncidentAngle').text)
-    system_settings_dict['TubeTakeOffAngle'] = float(xrf_node.find('TubeTakeOffAngle').text)
-    system_settings_dict['TubeWindow,AtomicNumber'] = \
-        int(xrf_node.find('TubeWindow').find('AtomicNumber').text)
-    system_settings_dict['TubeWindow,Thickness'] = \
-        int(float(xrf_node.find('TubeWindow').find('Thickness').text))
+    system_settings_dict['TubeIncidentAngle'] = float(
+        xrf_node.find('TubeIncidentAngle').text
+    )
+    system_settings_dict['TubeTakeOffAngle'] = float(
+        xrf_node.find('TubeTakeOffAngle').text
+    )
+    system_settings_dict['TubeWindow,AtomicNumber'] = int(
+        xrf_node.find('TubeWindow').find('AtomicNumber').text
+    )
+    system_settings_dict['TubeWindow,Thickness'] = int(
+        float(xrf_node.find('TubeWindow').find('Thickness').text)
+    )
     system_settings_dict['Optic'] = xrf_node.find('Optic').text
     system_settings_dict['SpotSize'] = int(float(xrf_node.find('SpotSize').text))
-    system_settings_dict['ExcitationAngle'] = float(xrf_node.find('ExcitationAngle').text)
+    system_settings_dict['ExcitationAngle'] = float(
+        xrf_node.find('ExcitationAngle').text
+    )
     system_settings_dict['DetectionAngle'] = float(xrf_node.find('DetectionAngle').text)
-    system_settings_dict['ExcitationPathLength'] = float(xrf_node.find('ExcitationPathLength').text)
-    system_settings_dict['DetectionPathLength'] = float(xrf_node.find('DetectionPathLength').text)
-    system_settings_dict['SolidAngleDetection'] = float(xrf_node.find('SolidAngleDetection').text)
+    system_settings_dict['ExcitationPathLength'] = float(
+        xrf_node.find('ExcitationPathLength').text
+    )
+    system_settings_dict['DetectionPathLength'] = float(
+        xrf_node.find('DetectionPathLength').text
+    )
+    system_settings_dict['SolidAngleDetection'] = float(
+        xrf_node.find('SolidAngleDetection').text
+    )
     system_settings_dict['AzimutAngleAbs'] = float(xrf_node.find('AzimutAngleAbs').text)
     system_settings_dict['DetAzimutAngle'] = float(xrf_node.find('DetAzimutAngle').text)
-    system_settings_dict['ChamberPressure'] = float(xrf_node.find('ChamberPressure').text)
+    system_settings_dict['ChamberPressure'] = float(
+        xrf_node.find('ChamberPressure').text
+    )
     system_settings_dict['TiltAngle'] = float(xrf_node.find('TiltAngle').text)
     system_settings_dict['DetSpotSize'] = float(xrf_node.find('DetSpotSize').text)
     system_settings_dict['Atmosphere'] = xrf_node.find('Atmosphere').text
     return system_settings_dict
 
 
-def get_spectrum_header(data_root: ElTree.Element) -> Dict:
+def get_spectrum_header(data_root: ElTree.Element) -> dict:
     """
     Method that walks the XML tree from the given root and finds the information for the spectrum header
     that were stored in the spx file. Returns the found values as a dict.
@@ -259,12 +428,22 @@ def get_spectrum_header(data_root: ElTree.Element) -> Dict:
     """
 
     spectrum_header_dict = {}
-    search_str = "./ClassInstance/[@Type='TRTSpectrum']" \
-                 "/ClassInstance/[@Type='TRTSpectrumHeader']"
+    search_str = (
+        "./ClassInstance/[@Type='TRTSpectrum']"
+        "/ClassInstance/[@Type='TRTSpectrumHeader']"
+    )
     spectrum_header_node = data_root.find(search_str)
-    date_time_string = spectrum_header_node.find('Date').text + ' ' + spectrum_header_node.find('Time').text
-    spectrum_header_dict['DateTime'] = pd.to_datetime(date_time_string).strftime('%Y-%m-%dT%H:%M:%S.%f')
-    spectrum_header_dict['ChannelCount'] = int(spectrum_header_node.find('ChannelCount').text)
+    date_time_string = (
+        spectrum_header_node.find('Date').text
+        + ' '
+        + spectrum_header_node.find('Time').text
+    )
+    spectrum_header_dict['DateTime'] = pd.to_datetime(date_time_string).strftime(
+        '%Y-%m-%dT%H:%M:%S.%f'
+    )
+    spectrum_header_dict['ChannelCount'] = int(
+        spectrum_header_node.find('ChannelCount').text
+    )
     spectrum_header_dict['CalibAbs'] = float(spectrum_header_node.find('CalibAbs').text)
     spectrum_header_dict['CalibLin'] = float(spectrum_header_node.find('CalibLin').text)
     spectrum_header_dict['SigmaAbs'] = float(spectrum_header_node.find('SigmaAbs').text)
@@ -283,11 +462,12 @@ def get_channels(data_root: ElTree.Element) -> np.array:
     :return: array that contains the counts
     :rtype: np.array
     """
-    search_str = "./ClassInstance/[@Type='TRTSpectrum']" \
-                 "/Channels"
+    search_str = "./ClassInstance/[@Type='TRTSpectrum']/Channels"
     channel_node = data_root.find(search_str)
     spectrum = channel_node.text.split(',')  # list containing the counts
-    return np.array(spectrum + ['0'] * (4096 - len(spectrum)), dtype=int)  # padding it with zeros for const. length
+    return np.array(
+        spectrum + ['0'] * (4096 - len(spectrum)), dtype=int
+    )  # padding it with zeros for const. length
 
 
 def is_results_in_file(data_root: ElTree.Element) -> bool:
@@ -299,8 +479,9 @@ def is_results_in_file(data_root: ElTree.Element) -> bool:
     :return: true if results node exists, else false
     :rtype: bool
     """
-    search_str = "./ClassInstance/[@Type='TRTSpectrum']" \
-                 "/ClassInstance/[@Type='TRTResult']"
+    search_str = (
+        "./ClassInstance/[@Type='TRTSpectrum']/ClassInstance/[@Type='TRTResult']"
+    )
     if len(data_root.findall(search_str)) > 0:
         return True
     else:
@@ -320,21 +501,25 @@ def get_fit_bkg(data_root: ElTree.Element) -> np.array:
     :return: array that contains the counts of the background
     :rtype: np.array
     """
-    search_str = "./ClassInstance/[@Type='TRTSpectrum']" \
-                 "/ChildClassInstances" \
-                 "/ClassInstance/[@Type='TRTXRFMultiQuantificationResults']" \
-                 "/TRTSpectrumQuantificationResults" \
-                 "/ClassInstance/[@Type='TRTSpectrumList']" \
-                 "/ChildClassInstances" \
-                 "/ClassInstance/[@Type='TRTSpectrum'][@Name='Background']" \
-                 "/Channels"
+    search_str = (
+        "./ClassInstance/[@Type='TRTSpectrum']"
+        '/ChildClassInstances'
+        "/ClassInstance/[@Type='TRTXRFMultiQuantificationResults']"
+        '/TRTSpectrumQuantificationResults'
+        "/ClassInstance/[@Type='TRTSpectrumList']"
+        '/ChildClassInstances'
+        "/ClassInstance/[@Type='TRTSpectrum'][@Name='Background']"
+        '/Channels'
+    )
     channel_node = data_root.find(search_str)
     background = channel_node.text.split(',')  # list containing the counts
     # padding it with zeros for const. length
     return np.array(background + ['0'] * (4096 - len(background)), dtype=float)
 
 
-def get_fit_layer_composition(data_root: ElTree.Element) -> Tuple[List[Dict], List[Dict]]:
+def get_fit_layer_composition(
+    data_root: ElTree.Element,
+) -> tuple[list[dict], list[dict]]:
     """
     Method that walks the XML tree from the given root and finds the
 
@@ -343,10 +528,12 @@ def get_fit_layer_composition(data_root: ElTree.Element) -> Tuple[List[Dict], Li
     :return: List of layer result dicts , List of layer property dicts
     :rtype: Tuple[List[Dict], List[Dict]]
     """
-    search_str = "./ClassInstance/[@Type='TRTSpectrum']" \
-                 "/ClassInstance/[@Type='TRTLayerResultList'][@Name='LayerResults']" \
-                 "/ChildClassInstances" \
-                 "/ClassInstance/[@Type='TRTLayerResult']"
+    search_str = (
+        "./ClassInstance/[@Type='TRTSpectrum']"
+        "/ClassInstance/[@Type='TRTLayerResultList'][@Name='LayerResults']"
+        '/ChildClassInstances'
+        "/ClassInstance/[@Type='TRTLayerResult']"
+    )
 
     layer_result_node_list = data_root.findall(search_str)
 
@@ -357,14 +544,18 @@ def get_fit_layer_composition(data_root: ElTree.Element) -> Tuple[List[Dict], Li
         element_node_list = layer_node.findall('TRTResult/Result')
         for element_node in element_node_list:
             atomic_number = int(element_node.find('Atom').text)
-            layer_result = {'LayerName': layer_name,
-                            'Element': periodic_table_dict[atomic_number]}
+            layer_result = {
+                'LayerName': layer_name,
+                'Element': periodic_table_dict[atomic_number],
+            }
             for element_results in element_node:
                 layer_result[element_results.tag] = element_results.text
             layer_results.append(layer_result)
-        layer_prop = {'LayerName': layer_name,
-                      'Density': float(layer_node.find('Density').text),
-                      'Thickness': float(layer_node.find('Thickness').text)}
+        layer_prop = {
+            'LayerName': layer_name,
+            'Density': float(layer_node.find('Density').text),
+            'Thickness': float(layer_node.find('Thickness').text),
+        }
         thickness_density_node = layer_node.find('ThicknessError')
         if thickness_density_node is not None:
             layer_prop['ThicknessError'] = float(thickness_density_node.text)
@@ -375,7 +566,7 @@ def get_fit_layer_composition(data_root: ElTree.Element) -> Tuple[List[Dict], Li
     return layer_results, layer_props
 
 
-def get_roi_results(data_root: ElTree.Element) -> List[Dict]:
+def get_roi_results(data_root: ElTree.Element) -> list[dict]:
     """
     Method that walks the XML tree from the given root and finds the
 
@@ -384,9 +575,11 @@ def get_roi_results(data_root: ElTree.Element) -> List[Dict]:
     :return: List with one dict per roi containing the result of this (elements) roi
     :rtype: List[Dict]
     """
-    search_str = "./ClassInstance/[@Type='TRTSpectrum']" \
-                 "/ClassInstance/[@Type='TRTResult'][@Name='Results']" \
-                 "/RoiResults"
+    search_str = (
+        "./ClassInstance/[@Type='TRTSpectrum']"
+        "/ClassInstance/[@Type='TRTResult'][@Name='Results']"
+        '/RoiResults'
+    )
 
     roi_result_node_list = data_root.findall(search_str)
 
@@ -400,7 +593,7 @@ def get_roi_results(data_root: ElTree.Element) -> List[Dict]:
     return roi_results
 
 
-def get_deconvolution_results(data_root: ElTree.Element) -> Tuple[str, List[Dict]]:
+def get_deconvolution_results(data_root: ElTree.Element) -> tuple[str, list[dict]]:
     """
     Method that walks the XML tree from the given root and finds the
 
@@ -409,32 +602,43 @@ def get_deconvolution_results(data_root: ElTree.Element) -> Tuple[str, List[Dict
     :return: deconvolution method as string, List with one dict per fluorescence line
     :rtype: Tuple[str, List[Dict]]
     """
-    search_str = "./ClassInstance/[@Type='TRTSpectrum']" \
-                 "ChildClassInstances" \
-                 "/ClassInstance/[@Type='TRTXRFMultiQuantificationResults']" \
-                 "/TRTSpectrumQuantificationResults" \
-                 "/ClassInstance/[@Type='TRTDeconvolutionResultList']"
+    search_str = (
+        "./ClassInstance/[@Type='TRTSpectrum']"
+        'ChildClassInstances'
+        "/ClassInstance/[@Type='TRTXRFMultiQuantificationResults']"
+        '/TRTSpectrumQuantificationResults'
+        "/ClassInstance/[@Type='TRTDeconvolutionResultList']"
+    )
 
     deconvolution_result_main_node = data_root.find(search_str)
     deconvolution_method = deconvolution_result_main_node.find('DeconvMethod').text
 
     deconvolution_result_node_list = deconvolution_result_main_node.findall(
-        "ChildClassInstances/ClassInstance/[@Type='TRTDeconvolutionResult']")
+        "ChildClassInstances/ClassInstance/[@Type='TRTDeconvolutionResult']"
+    )
 
     deconvolution_results = []
     for deconvolution_result_node in deconvolution_result_node_list:
-        element = periodic_table_dict[int(deconvolution_result_node.find('Element').text)]
+        element = periodic_table_dict[
+            int(deconvolution_result_node.find('Element').text)
+        ]
         for line in deconvolution_result_node.findall('Line'):
             line_info = line.text.split(',')
-            deconvolution_results.append({'Energy': line_info[1],
-                                          'Counts': line_info[2],
-                                          'Element': element,
-                                          'Line': line_info[0]})
+            deconvolution_results.append(
+                {
+                    'Energy': line_info[1],
+                    'Counts': line_info[2],
+                    'Element': element,
+                    'Line': line_info[0],
+                }
+            )
 
     return deconvolution_method, deconvolution_results
 
 
-def read(file_obj_paths: list):  # , required_params: Dict[str, Any]):  # , library_infos: List[Dict[str, Any]],
+def read(
+    file_obj_paths: list,
+):  # , required_params: Dict[str, Any]):  # , library_infos: List[Dict[str, Any]],
     # user: str):
 
     #
@@ -459,10 +663,12 @@ def read(file_obj_paths: list):  # , required_params: Dict[str, Any]):  # , libr
     layer_prop_rows = []  # list of dicts containing layer properties (density, thickness, ...)
     fit_bkg = []  # list of np.arrays with the fitted background
     for idx, spx_file_obj in enumerate(file_obj_paths):
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".spx") as temp_file:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.spx') as temp_file:
             temp_file.write(spx_file_obj.read())
             temp_file_path = temp_file.name
-        spx_tree = ElTree.parse(temp_file_path, parser=ElTree.XMLParser(encoding='WINDOWS-1252'))
+        spx_tree = ElTree.parse(
+            temp_file_path, parser=ElTree.XMLParser(encoding='WINDOWS-1252')
+        )
         spx_root = spx_tree.getroot()
         # read measurement infos
         info_dict = {}  # dict containing the info, that will be used to append as a row in the measurement_data
@@ -500,8 +706,12 @@ def read(file_obj_paths: list):  # , required_params: Dict[str, Any]):  # , libr
         #     fit_bkg.append(get_fit_bkg(spx_root))
         ##########################################################################################
     # generate axes
-    positions_array = np.array(positions).T  # make a (multi-dim) array from list of position and transpose
-    position_axes, x_first = create_grid(positions_array)  # calculates grid positions in x and y direction
+    positions_array = np.array(
+        positions
+    ).T  # make a (multi-dim) array from list of position and transpose
+    position_axes, x_first = create_grid(
+        positions_array
+    )  # calculates grid positions in x and y direction
 
     # the grid will be with relative positions such that the point with lowest x and y will be at (0,0).
     # for positions relative to the substrate, the padding entered by the user will be added in the dims.
@@ -515,9 +725,14 @@ def read(file_obj_paths: list):  # , required_params: Dict[str, Any]):  # , libr
     #                                    dim_long_name="y position")
 
     measurement_data = pd.DataFrame(measurement_rows).set_index(['idx'])
-    channel_numbers = np.arange(measurement_data['ChannelCount'].values[0])  # no. of channels is constant --> [any]
+    channel_numbers = np.arange(
+        measurement_data['ChannelCount'].values[0]
+    )  # no. of channels is constant --> [any]
     # In the spx files, there are entries for a linear function of the channel to energy conversion
-    energy_axis = measurement_data['CalibAbs'].mean() + channel_numbers * measurement_data['CalibLin'].mean()
+    energy_axis = (
+        measurement_data['CalibAbs'].mean()
+        + channel_numbers * measurement_data['CalibLin'].mean()
+    )
     # energy_dim_array = make_dimension_array(
     #     dim_name="energy",
     #     dim_values=energy_axis,
@@ -533,7 +748,14 @@ def read(file_obj_paths: list):  # , required_params: Dict[str, Any]):  # , libr
         len_x = len(position_axes[1])
         len_y = len(position_axes[0])
         order_letter = 'C'
-    return spectra, energy_axis, measurement_rows, positions_array, position_axes, (len_x, len_y, order_letter)
+    return (
+        spectra,
+        energy_axis,
+        measurement_rows,
+        positions_array,
+        position_axes,
+        (len_x, len_y, order_letter),
+    )
 
     # measurement_data_arrays_list = [
     #     make_data_array(data_name='intensity',

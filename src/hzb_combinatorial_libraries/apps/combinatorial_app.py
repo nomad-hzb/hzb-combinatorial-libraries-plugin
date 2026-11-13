@@ -1,4 +1,3 @@
-import yaml
 from nomad.config.models.ui import (
     App,
     Column,
@@ -84,116 +83,123 @@ combinatorial_app = App(
         }
     ),
     # Controls the default dashboard shown in the search interface
-    dashboard={'widgets': [
-        {
-            'type': 'periodictable',
-            'scale': 'linear',
-            'quantity': 'results.material.elements',
-            'layout': {
-                'xxl': {'minH': 3, 'minW': 3, 'h': 9, 'w': 12, 'y': 0, 'x': 0},
-                'xl': {'minH': 3, 'minW': 3, 'h': 9, 'w': 12, 'y': 0, 'x': 0},
-                'lg': {'minH': 3, 'minW': 3, 'h': 9, 'w': 12, 'y': 0, 'x': 0},
-                'md': {'minH': 3, 'minW': 3, 'h': 9, 'w': 12, 'y': 0, 'x': 0},
-                'sm': {'minH': 3, 'minW': 3, 'h': 9, 'w': 12, 'y': 0, 'x': 0},
-            },
-        },
-        {
-            'type': 'terms',
-            'showinput': True,
-            'scale': 'linear',
-            'quantity': 'results.eln.lab_ids',
-            'layout': {
-                'xxl': {'minH': 3, 'minW': 3, 'h': 6, 'w': 6, 'y': 0, 'x': 6},
-                'xl': {'minH': 3, 'minW': 3, 'h': 6, 'w': 6, 'y': 0, 'x': 6},
-                'lg': {'minH': 3, 'minW': 3, 'h': 6, 'w': 6, 'y': 0, 'x': 6},
-                'md': {'minH': 3, 'minW': 3, 'h': 6, 'w': 6, 'y': 0, 'x': 6},
-                'sm': {'minH': 3, 'minW': 3, 'h': 6, 'w': 6, 'y': 0, 'x': 6},
-            }
-        },
-        {
-            'type': 'histogram',
-            'showinput': True,
-            'autorange': False,
-            'nbins': 30,
-            'scale': 'linear',
-            'title': 'Thickness',
-            'x': {
-              'quantity': 'data.thickness.value#hzb_combinatorial_libraries.schema_packages.hzb_library_package.UnoldSample',  # noqa: E501
-              'unit':  'nm',
-            },
-            'layout': {
-                'xxl': {'minH': 3, 'minW': 3, 'h': 3, 'w': 8, 'y': 0, 'x': 0},
-                'xl': {'minH': 3, 'minW': 3, 'h': 3, 'w': 8, 'y': 0, 'x': 0},
-                'lg': {'minH': 3, 'minW': 3, 'h': 6, 'w': 12, 'y': 18, 'x': 0},
-                'md': {'minH': 3, 'minW': 3, 'h': 3, 'w': 8, 'y': 6, 'x': 0},
-                'sm': {'minH': 3, 'minW': 3, 'h': 3, 'w': 9, 'y': 6, 'x': 0},
-            }
-        },
-        {
-            'type': 'histogram',
-            'showinput': True,
-            'autorange': False,
-            'nbins': 30,
-            'scale': 'linear',
-            'title': 'Bandgap',
-            'x': {
-              'quantity': 'data.band_gap.value#hzb_combinatorial_libraries.schema_packages.hzb_library_package.UnoldSample',
-              'unit':  'eV',
-            },
-            'layout': {
-                'xxl': {'minH': 3, 'minW': 3, 'h': 3, 'w': 8, 'y': 0, 'x': 0},
-                'xl': {'minH': 3, 'minW': 3, 'h': 3, 'w': 8, 'y': 0, 'x': 0},
-                'lg': {'minH': 3, 'minW': 3, 'h': 6, 'w': 12, 'y': 18, 'x': 0},
-                'md': {'minH': 3, 'minW': 3, 'h': 3, 'w': 8, 'y': 6, 'x': 0},
-                'sm': {'minH': 3, 'minW': 3, 'h': 3, 'w': 9, 'y': 6, 'x': 0},
-            }
-        },
-        {
-          'type': 'scatterplot',
-          'autorange': True,
-          'markers': {'color': {"quantity": 'data.thickness.value#hzb_combinatorial_libraries.schema_packages.hzb_library_package.UnoldSample',
-                                "unit": "nm"}},
-          'x': {"quantity": "min(data.elemental_composition[?element == 'Br'].atomic_fraction#hzb_combinatorial_libraries.schema_packages.hzb_library_package.UnoldSample)"
+    dashboard={
+        'widgets': [
+            {
+                'type': 'periodictable',
+                'scale': 'linear',
+                'quantity': 'results.material.elements',
+                'layout': {
+                    'xxl': {'minH': 3, 'minW': 3, 'h': 9, 'w': 12, 'y': 0, 'x': 0},
+                    'xl': {'minH': 3, 'minW': 3, 'h': 9, 'w': 12, 'y': 0, 'x': 0},
+                    'lg': {'minH': 3, 'minW': 3, 'h': 9, 'w': 12, 'y': 0, 'x': 0},
+                    'md': {'minH': 3, 'minW': 3, 'h': 9, 'w': 12, 'y': 0, 'x': 0},
+                    'sm': {'minH': 3, 'minW': 3, 'h': 9, 'w': 12, 'y': 0, 'x': 0},
                 },
-          'y': {"quantity": "data.band_gap.value#hzb_combinatorial_libraries.schema_packages.hzb_library_package.UnoldSample",
-                "unit": "eV"
+            },
+            {
+                'type': 'terms',
+                'showinput': True,
+                'scale': 'linear',
+                'quantity': 'results.eln.lab_ids',
+                'layout': {
+                    'xxl': {'minH': 3, 'minW': 3, 'h': 6, 'w': 6, 'y': 0, 'x': 6},
+                    'xl': {'minH': 3, 'minW': 3, 'h': 6, 'w': 6, 'y': 0, 'x': 6},
+                    'lg': {'minH': 3, 'minW': 3, 'h': 6, 'w': 6, 'y': 0, 'x': 6},
+                    'md': {'minH': 3, 'minW': 3, 'h': 6, 'w': 6, 'y': 0, 'x': 6},
+                    'sm': {'minH': 3, 'minW': 3, 'h': 6, 'w': 6, 'y': 0, 'x': 6},
                 },
-          # 'y': {
-          #       "quantity": 'data.band_gap.value#hzb_combinatorial_libraries.schema_packages.hzb_library_package.UnoldSample',
-          #       "unit": "eV",
-          #       "title": "Bandgap"
-          #       },
-          'layout': {
-              'xxl': {'minH': 6, 'minW': 6, 'h': 6, 'w': 6, 'y': 0, 'x': 10},
-              'xl': {'minH': 6, 'minW': 6, 'h': 6, 'w': 6, 'y': 0, 'x': 10},
-              'lg':  {'minH': 6, 'minW': 6, 'h': 6, 'w': 6, 'y': 0, 'x': 10},
-              'md': {'minH': 3, 'minW': 3, 'h': 6, 'w': 6, 'y': 0, 'x': 10},
-              'sm':  {'minH': 3, 'minW': 3, 'h': 6, 'w': 6, 'y': 0, 'x': 10},
-          }
-          },
-        {
-          'type': 'scatterplot',
-          'autorange': True,
-          'title': 'Implied VOC vs. Bandgap',
-          'x': {
-                "quantity": 'data.photovoltaic.voc.value#hzb_combinatorial_libraries.schema_packages.hzb_library_package.UnoldSample',
-                "unit": "V",
-                "title": "Implied VOC"
-          },
-          'y': {
-                "quantity": 'data.band_gap.value#hzb_combinatorial_libraries.schema_packages.hzb_library_package.UnoldSample',
-                "unit": "eV",
-                "title": "Bandgap"
+            },
+            {
+                'type': 'histogram',
+                'showinput': True,
+                'autorange': False,
+                'nbins': 30,
+                'scale': 'linear',
+                'title': 'Thickness',
+                'x': {
+                    'quantity': 'data.thickness.value#hzb_combinatorial_libraries.schema_packages.hzb_library_package.UnoldSample',  # noqa: E501
+                    'unit': 'nm',
                 },
-          'markers': {'color': {"quantity": "entry_type"}},
-          'layout': {
-              'xxl': {'minH': 6, 'minW': 6, 'h': 6, 'w': 6, 'y': 6, 'x': 6},
-              'xl': {'minH': 6, 'minW': 6, 'h': 6, 'w': 6, 'y': 6, 'x': 6},
-              'lg':  {'minH': 6, 'minW': 6, 'h': 6, 'w': 6, 'y': 6, 'x': 6},
-              'md': {'minH': 3, 'minW': 3, 'h': 6, 'w': 6, 'y': 6, 'x': 6},
-              'sm':  {'minH': 3, 'minW': 3, 'h': 6, 'w': 6, 'y': 6, 'x': 6},
-          }
-          }
+                'layout': {
+                    'xxl': {'minH': 3, 'minW': 3, 'h': 3, 'w': 8, 'y': 0, 'x': 0},
+                    'xl': {'minH': 3, 'minW': 3, 'h': 3, 'w': 8, 'y': 0, 'x': 0},
+                    'lg': {'minH': 3, 'minW': 3, 'h': 6, 'w': 12, 'y': 18, 'x': 0},
+                    'md': {'minH': 3, 'minW': 3, 'h': 3, 'w': 8, 'y': 6, 'x': 0},
+                    'sm': {'minH': 3, 'minW': 3, 'h': 3, 'w': 9, 'y': 6, 'x': 0},
+                },
+            },
+            {
+                'type': 'histogram',
+                'showinput': True,
+                'autorange': False,
+                'nbins': 30,
+                'scale': 'linear',
+                'title': 'Bandgap',
+                'x': {
+                    'quantity': 'data.band_gap.value#hzb_combinatorial_libraries.schema_packages.hzb_library_package.UnoldSample',
+                    'unit': 'eV',
+                },
+                'layout': {
+                    'xxl': {'minH': 3, 'minW': 3, 'h': 3, 'w': 8, 'y': 0, 'x': 0},
+                    'xl': {'minH': 3, 'minW': 3, 'h': 3, 'w': 8, 'y': 0, 'x': 0},
+                    'lg': {'minH': 3, 'minW': 3, 'h': 6, 'w': 12, 'y': 18, 'x': 0},
+                    'md': {'minH': 3, 'minW': 3, 'h': 3, 'w': 8, 'y': 6, 'x': 0},
+                    'sm': {'minH': 3, 'minW': 3, 'h': 3, 'w': 9, 'y': 6, 'x': 0},
+                },
+            },
+            {
+                'type': 'scatterplot',
+                'autorange': True,
+                'markers': {
+                    'color': {
+                        'quantity': 'data.thickness.value#hzb_combinatorial_libraries.schema_packages.hzb_library_package.UnoldSample',
+                        'unit': 'nm',
+                    }
+                },
+                'x': {
+                    'quantity': "min(data.elemental_composition[?element == 'Br'].atomic_fraction#hzb_combinatorial_libraries.schema_packages.hzb_library_package.UnoldSample)"
+                },
+                'y': {
+                    'quantity': 'data.band_gap.value#hzb_combinatorial_libraries.schema_packages.hzb_library_package.UnoldSample',
+                    'unit': 'eV',
+                },
+                # 'y': {
+                #       "quantity": 'data.band_gap.value#hzb_combinatorial_libraries.schema_packages.hzb_library_package.UnoldSample',
+                #       "unit": "eV",
+                #       "title": "Bandgap"
+                #       },
+                'layout': {
+                    'xxl': {'minH': 6, 'minW': 6, 'h': 6, 'w': 6, 'y': 0, 'x': 10},
+                    'xl': {'minH': 6, 'minW': 6, 'h': 6, 'w': 6, 'y': 0, 'x': 10},
+                    'lg': {'minH': 6, 'minW': 6, 'h': 6, 'w': 6, 'y': 0, 'x': 10},
+                    'md': {'minH': 3, 'minW': 3, 'h': 6, 'w': 6, 'y': 0, 'x': 10},
+                    'sm': {'minH': 3, 'minW': 3, 'h': 6, 'w': 6, 'y': 0, 'x': 10},
+                },
+            },
+            {
+                'type': 'scatterplot',
+                'autorange': True,
+                'title': 'Implied VOC vs. Bandgap',
+                'x': {
+                    'quantity': 'data.photovoltaic.voc.value#hzb_combinatorial_libraries.schema_packages.hzb_library_package.UnoldSample',
+                    'unit': 'V',
+                    'title': 'Implied VOC',
+                },
+                'y': {
+                    'quantity': 'data.band_gap.value#hzb_combinatorial_libraries.schema_packages.hzb_library_package.UnoldSample',
+                    'unit': 'eV',
+                    'title': 'Bandgap',
+                },
+                'markers': {'color': {'quantity': 'entry_type'}},
+                'layout': {
+                    'xxl': {'minH': 6, 'minW': 6, 'h': 6, 'w': 6, 'y': 6, 'x': 6},
+                    'xl': {'minH': 6, 'minW': 6, 'h': 6, 'w': 6, 'y': 6, 'x': 6},
+                    'lg': {'minH': 6, 'minW': 6, 'h': 6, 'w': 6, 'y': 6, 'x': 6},
+                    'md': {'minH': 3, 'minW': 3, 'h': 6, 'w': 6, 'y': 6, 'x': 6},
+                    'sm': {'minH': 3, 'minW': 3, 'h': 6, 'w': 6, 'y': 6, 'x': 6},
+                },
+            },
         ]
-    }
+    },
 )

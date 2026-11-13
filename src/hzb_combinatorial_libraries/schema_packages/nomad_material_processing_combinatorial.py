@@ -15,39 +15,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from typing import (
-    TYPE_CHECKING,
+from baseclasses.catalysis.catalysissample import (
+    CombinatorialProperty,
+    Formula,
+    Thickness,
+    XRayDiffraction,
 )
-import plotly.graph_objects as go
 from nomad.datamodel.data import (
     ArchiveSection,
-    EntryData,
 )
-from nomad.datamodel.metainfo.annotations import (
-    ELNAnnotation,
-    ELNComponentEnum,
-)
-from nomad.datamodel.metainfo.basesections import (
-    Collection,
-    CompositeSystem,
-    CompositeSystemReference,
-    Measurement,
-)
-from nomad.datamodel.metainfo.plot import (
-    PlotlyFigure,
-    PlotSection,
-)
-from nomad.metainfo import (
-    Package,
-    Quantity,
-    Reference,
-    Section,
-    SubSection,
-    SubSection
-)
-
-from baseclasses.catalysis.catalysissample import CombinatorialProperty, Formula, Thickness, XRayDiffraction
-
+from nomad.metainfo import Quantity, SubSection
 from nomad_material_processing.combinatorial import CombinatorialSample
 
 
@@ -222,16 +199,17 @@ class ComplexRefractiveIndex(CombinatorialProperty):
         The (real part of the) refractive index of the sample.
         """,
         shape=['n_values'],
-        a_plot=[{
-            'label': 'n data over wavelength',
-            'x': 'photon_wavelength',
-            'y': 'n',
-            'layout': {
-                'yaxis': {
-                    "fixedrange": False},
-                'xaxis': {
-                    "fixedrange": False}},
-        }]
+        a_plot=[
+            {
+                'label': 'n data over wavelength',
+                'x': 'photon_wavelength',
+                'y': 'n',
+                'layout': {
+                    'yaxis': {'fixedrange': False},
+                    'xaxis': {'fixedrange': False},
+                },
+            }
+        ],
     )
     k = Quantity(
         type=float,
@@ -239,16 +217,17 @@ class ComplexRefractiveIndex(CombinatorialProperty):
         The attenuation coefficient of the sample.
         """,
         shape=['n_values'],
-        a_plot=[{
-            'label': 'k data over wavelength',
-            'x': 'photon_wavelength',
-            'y': 'k',
-            'layout': {
-                'yaxis': {
-                    "fixedrange": False},
-                'xaxis': {
-                    "fixedrange": False}},
-        }]
+        a_plot=[
+            {
+                'label': 'k data over wavelength',
+                'x': 'photon_wavelength',
+                'y': 'k',
+                'layout': {
+                    'yaxis': {'fixedrange': False},
+                    'xaxis': {'fixedrange': False},
+                },
+            }
+        ],
     )
     photon_wavelength = Quantity(
         type=float,

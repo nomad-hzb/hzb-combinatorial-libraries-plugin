@@ -18,26 +18,22 @@
 
 import datetime
 
-
+from baseclasses.helper.utilities import set_sample_reference
 from nomad.datamodel import EntryArchive
+from nomad.datamodel.data import (
+    EntryData,
+)
+from nomad.datamodel.metainfo.annotations import (
+    ELNAnnotation,
+)
+from nomad.datamodel.metainfo.basesections import (
+    Activity,
+)
 from nomad.metainfo import (
     Quantity,
 )
 from nomad.parsing import MatchingParser
-from nomad.datamodel.metainfo.annotations import (
-    ELNAnnotation,
-)
-from nomad.datamodel.data import (
-    EntryData,
-)
-
-from nomad.datamodel.metainfo.basesections import (
-    Activity,
-)
-
-
 from nomad_material_processing.utils import create_archive
-from baseclasses.helper.utilities import set_sample_reference
 
 
 class ParsedFile(EntryData):
@@ -45,47 +41,53 @@ class ParsedFile(EntryData):
         type=Activity,
         a_eln=ELNAnnotation(
             component='ReferenceEditQuantity',
-        )
+        ),
     )
 
 
 class PVDPParser(MatchingParser):
-
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
-        from hzb_combinatorial_libraries.schema_packages.hzb_library_package import (UnoldThermalEvaporation, UnoldXRFMeasurementLibrary, UnoldUVvisReflectionMeasurementLibrary,
-                                                                                     UnoldUVvisTransmissionMeasurementLibrary, UnoldPLMeasurementLibrary, UnoldConductivityMeasurementLibrary, UnoldTRPLMeasurementLibrary)
+        from hzb_combinatorial_libraries.schema_packages.hzb_library_package import (
+            UnoldConductivityMeasurementLibrary,
+            UnoldPLMeasurementLibrary,
+            UnoldThermalEvaporation,
+            UnoldTRPLMeasurementLibrary,
+            UnoldUVvisReflectionMeasurementLibrary,
+            UnoldUVvisTransmissionMeasurementLibrary,
+            UnoldXRFMeasurementLibrary,
+        )
 
         entry = None
-        file = mainfile.split('/')[-1]
+        file = mainfile.rsplit('/', maxsplit=1)[-1]
 
-        if "pvd" in file.lower():
+        if 'pvd' in file.lower():
             entry = UnoldThermalEvaporation(log_file=file)
 
-        if "refl20" in file:
+        if 'refl20' in file:
             entry = UnoldUVvisReflectionMeasurementLibrary(data_file=file)
 
-        if "trans20" in file:
+        if 'trans20' in file:
             entry = UnoldUVvisTransmissionMeasurementLibrary(data_file=file)
 
-        if "trpl" in file and file.endswith(".knc"):
+        if 'trpl' in file and file.endswith('.knc'):
             entry = UnoldTRPLMeasurementLibrary(data_file=file)
 
-        if "PL" in file:
+        if 'PL' in file:
             entry = UnoldPLMeasurementLibrary(data_file=file)
 
-        if "resist" in file.lower():
+        if 'resist' in file.lower():
             entry = UnoldConductivityMeasurementLibrary(data_file=file)
 
-        if "xrf" in file.lower():
+        if 'xrf' in file.lower():
             entry = UnoldXRFMeasurementLibrary(composition_file=file)
         if entry is None:
             return
 
-        search_id = file.split("#")[0]
+        search_id = file.split('#')[0]
         set_sample_reference(archive, entry, search_id)
 
-        entry.datetime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-        entry.name = f"{search_id}"
+        entry.datetime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+        entry.name = f'{search_id}'
 
         file_name = f'{file}.archive.json'
         archive.data = ParsedFile(activity=create_archive(entry, archive, file_name))
