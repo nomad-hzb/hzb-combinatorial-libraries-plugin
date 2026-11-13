@@ -98,9 +98,8 @@ from nomad.datamodel.data import (
 )
 from baseclasses.customreadable_identifier import ReadableIdentifiersCustom
 
-from nomad_material_processing.combinatorial import (
-    ThinFilmCombinatorialSample,
-    CombinatorialLibrary)
+from nomad_material_processing.combinatorial import CombinatorialLibrary
+from nomad_material_processing_combinatorial import ThinFilmCombinatorialSample
 from baseclasses.helper.add_solar_cell import add_solar_cell, add_band_gap
 
 m_package = SchemaPackage()
