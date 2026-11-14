@@ -89,7 +89,7 @@ from nomad_material_processing.vapor_deposition.pvd.thermal import (
     ThermalEvaporationSource,
     ThermalEvaporationStep,
 )
-from nomad_material_processing_combinatorial import ThinFilmCombinatorialSample
+from .nomad_material_processing_combinatorial import ThinFilmCombinatorialSample
 from structlog.stdlib import (
     BoundLogger,
 )
